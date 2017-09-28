@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Html exposing (Html, beginnerProgram, button, div, text)
 import Html.Attributes exposing (class, style)
@@ -15,7 +15,6 @@ type ApplicationState
 type Msg
     = Start
     | Stop
-    | Initialize
 
 
 type alias ApplicationModel =
@@ -33,23 +32,32 @@ main =
 
 
 init =
-    ( ApplicationModel Initialized, Cmd.none )
+    ( ApplicationModel Initialized, logger "Initialized" )
 
 
 update msg model =
     case msg of
-        Initialize ->
-            ( { model | state = Initialized }, Cmd.none )
-
         Start ->
-            ( { model | state = Started }, Cmd.none )
+            ( { model | state = Started }, logger "Started" )
 
         Stop ->
-            ( { model | state = Stopped }, Cmd.none )
+            ( { model | state = Stopped }, logger "Stopped" )
 
 
+subscriptions : ApplicationModel -> Sub Msg
 subscriptions model =
-    Sub.none
+    bus
+        (\message ->
+            case message of
+                "Start" ->
+                    Start
+
+                "Stop" ->
+                    Stop
+
+                _ ->
+                    Stop
+        )
 
 
 view model =
@@ -73,3 +81,9 @@ getApplicationContent model =
             div []
                 [ button [ onClick Start ] [ text "Start it again stupid!" ]
                 ]
+
+
+port logger : String -> Cmd msg
+
+
+port bus : (String -> msg) -> Sub msg

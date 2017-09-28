@@ -4,6 +4,20 @@
     <title>Elm Book</title>
 </head>
 <body>
-    <!-- Content goes here -->
+<div id="app-root"></div>
+<button>Click me!</button>
+<script src="main.js"></script>
+<script>
+  var node = document.getElementById('app-root');
+  var component = Elm.Main.embed(node);
+
+  component.ports.logger.subscribe(function(state) {
+    console.log(state);
+  });
+
+  document.querySelector('button').addEventListener('click', function() {
+    component.ports.bus.send('Start');
+  });
+</script>
 </body>
 </html>
