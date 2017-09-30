@@ -1,14 +1,10 @@
 # Specification
-===============
-     
-## IS operator
---------------   
-     
-        
-*IS*
+             
+## Is
         
 ### Case 1.1.1:
 input = `find person whose @name is Maksym`
+```
 output = [
     {
         "name": {
@@ -16,10 +12,13 @@ output = [
             value: "Maksym"
         }
     }
-]        
+] 
+```       
 
 ### Case 1.1.2:
 input = `find person whose @name is "Maksym"`
+
+```
 output = [
     {
         "name": {
@@ -28,9 +27,11 @@ output = [
         }
     }    
 ]
+```
    
 ### Case 1.1.3:
 input = `find person whose @name is "Maksym Oliinyk"`
+```
 output = [
     {
         "name": {
@@ -39,9 +40,11 @@ output = [
         }
     }    
 ]
+```
     
 ### Case 1.1.4:
-input = `@name is "Maksym Oliinyk"`
+input = `@name is "Maksym Oliinyk"`    
+```
 output = [
     {
         "name": {
@@ -50,27 +53,34 @@ output = [
         }
     }
 ]    
+```
     
 ### Case 1.1.5:
-input = `find person with name Maksym`
+input = `find person with name Maksym`    
+```
 output = [
-]    
+]        
+```
     
 ### Case 1.1.6:
-input = `find person whose name is Maksym`
+input = `find person whose name is Maksym`    
+```
 output = [
-]    
+]        
+```
 
 ### Case 1.1.7:
-input = `find person whose @ name is Maksym`
+input = `find person whose @ name is Maksym`    
+```
 output = [
-]    
+]        
+```
     
-    
-*IS NOT*
+## Is not
 
 ### Case 1.2.1:
-input = `find person whose @name is not Maksym`
+input = `find person whose @name is not Maksym`    
+```
 output = [
     {
         "name": {
@@ -78,10 +88,12 @@ output = [
             value: "Maksym"
         }
     }    
-]
+]    
+```
 
 ### Case 1.2.2:
-input = `find person whose @name is not "Maksym"`
+input = `find person whose @name is not "Maksym"`    
+```
 output = [
     {
         "name": {
@@ -89,10 +101,12 @@ output = [
             value: "Maksym"
         }
     }    
-]
+]    
+```
 
 ### Case 1.2.3:
-input = `find person whose @name is not Maksym Oliinyk`
+input = `find person whose @name is not Maksym Oliinyk`    
+```
 output = [
     {
         "name": {
@@ -100,10 +114,12 @@ output = [
             value: "Maksym Oliinyk"
         }
     }
-]    
+]        
+```
 
 ### Case 1.2.4:
-input = `find person whose @name is not "Maksym Oliinyk"`
+input = `find person whose @name is not "Maksym Oliinyk"`    
+```
 output = [
     {
         "name": {
@@ -111,13 +127,14 @@ output = [
             value: "Maksym Oliinyk"
         }
     }
-]    
+]        
+```
 
-
-*EITHER OR / NEITHER NOR*
+## Either or / Neither nor
 
 ### Case 1.3.1:
-input = `@forename is either Maksym or Viktor`
+input = `@forename is either Maksym or Viktor`    
+```
 output = [
     {
         forename: {
@@ -128,10 +145,12 @@ output = [
             ]
         }
     }
-] 
+]     
+```
 
 ### Case 1.3.2:
-input = `@forename is either Maksym or Viktor or Julia or ...`
+input = `@forename is either Maksym or Viktor or Julia or ...`    
+```
 output = [
     {
         forename: {
@@ -139,10 +158,12 @@ output = [
             value: ["Maksym", "Viktor", "Julia", ... ]
         }
     }
-] 
+]     
+```
 
 ### Case 1.3.3:
-input = `@forename is neither Maksym nor Viktor`
+input = `@forename is neither Maksym nor Viktor`    
+```
 output = [
     {
         forename: {
@@ -150,10 +171,12 @@ output = [
             value: ["Maksym", "Viktor"]
         }
     }
-] 
+]     
+```
 
 ### Case 1.3.4:
-input = `@forename is neither Maksym nor Viktor nor Julia nor ...`
+input = `@forename is neither Maksym nor Viktor nor Julia nor ...`    
+```
 output = [
     {
         forename: {
@@ -161,12 +184,14 @@ output = [
             value: ["Maksym", "Viktor", "Julia", ... ]
         }
     }
-] 
+]     
+```
 
-*AND / OR*
+## And / Or
 
 ### Case 1.4.1:
-input = `find person whose @forename is Maksym and @surname Oliinyk`
+input = `find person whose @forename is Maksym and @surname Oliinyk`    
+```
 output = [
     {
         forename: {
@@ -178,10 +203,12 @@ output = [
             value: "Oliinyk"
         }
     }
-] 
+]     
+```
 
 ### Case 1.4.2:
-input = `@forename is Maksym and @surname is Oliinyk`
+input = `@forename is Maksym and @surname is Oliinyk`    
+```
 output = [
     {
         forename: {
@@ -193,10 +220,12 @@ output = [
             value: "Oliinyk"
         }
     }
-] 
+]     
+```
 
 ### Case 1.4.3:
-input = `@forename is in (Maksym, Viktor) or @forename is in (Alex, Julia)`
+input = `@forename is in (Maksym, Viktor) or @forename is in (Alex, Julia)`    
+```
 output = [
     {
         forename: {
@@ -210,10 +239,12 @@ output = [
             value: ["Alex", "Julia"]
         }
     }
-] 
+]     
+```
 
 ### Case 1.3.4:
-input = `@forename is Maksym and @surname is either Ivanov or Petrov`
+input = `@forename is Maksym and @surname is either Ivanov or Petrov`    
+```
 output = [
     {
         forename: {
@@ -225,11 +256,13 @@ output = [
             value: ["Ivanov", "Petrov"] 
         }
     }
-] 
+]     
+```
 
 ### Case 1.3.5:
 input = `@forename is Maksym and @surname is either Ivanov or Petrov 
-            or @forename is Viktor and @surname is neither Sokolov nor Smirnov`
+            or @forename is Viktor and @surname is neither Sokolov nor Smirnov`             
+```
 output = [
     {
         forename: {
@@ -251,31 +284,12 @@ output = [
             value: ["Ivanov", "Petrov"] 
         }
     }
-] 
+]     
+```
 
-`find person whose @name is Maksym`
-`find person whose @name is "Maksym"`
-`find person whose @name is "Maksym Oliinyk"`
-`@name is "Maksym Oliinyk"`
-`find person with name Maksym`
-`find person whose name is Maksym`
-`find person whose @ name is Maksym`
-`find person whose @name is not Maksym`
-`find person whose @name is not "Maksym"`
-`find person whose @name is not Maksym Oliinyk`
-`find person whose @name is not "Maksym Oliinyk"`
-`@forename is either Maksym or Viktor`
-`@forename is either Maksym or Viktor or Julia or ...`
-`@forename is neither Maksym nor Viktor`
-`@forename is neither Maksym nor Viktor nor Julia nor ...`
-`find person whose @forename is Maksym and @surname Oliinyk`
-`@forename is Maksym and @surname is Oliinyk`
-`@forename is either Maksym or Viktor or @forename is either Alex or Julia`
-`   @forename is Maksym and @surname is either Ivanov or Petrov`
-`@forename is Maksym and @surname is either Ivanov or Petrov or @forename is Viktor and @surname is neither Sokolov nor Smirnov`
+## Terminal symbols:
 
-
-# Terminal symbols:
+```
 AT = '@';
 START_QUOTE_TERM = /["']/;
 END_QUOTE_TERM = /["']/; 
@@ -289,9 +303,11 @@ NOT_TERM = 'not';
 SPACE_TERM = ' ';
 CHAR_TERM = /[^ @]/;
 KEYWORD_TERM = [@(name|forename|surname|age)]
+```
 
+## Non terminal symbols
 
-# Non terminal symbols
+```
 NEITHER_NOR_OPERATOR
 NEITHER_OPERATOR
 EITHER_OR_OPERATOR
@@ -312,8 +328,11 @@ CRITERIA_GROUP
 WORD
 SPACE
 STATEMENT
+```
 
-# FSM logic
+## FSM logic
+
+```
 NEITHER_NOR_OPERATOR = [SPACE | NOR_TERM | VALUE | NEITHER_NOR_OPERATOR]
 NEITHER_OPERATOR = [SPACE | NEITHER_TERM | VALUE | NEITHER_NOR_OPERATOR]
 EITHER_OR_OPERATOR = [SPACE | OR_TERM | VALUE | EITHER_OR_OPERATOR]
@@ -335,4 +354,4 @@ WORD = [CHAR_TERM | WORD]
 SPACE = [SPACE_TERM | SPACE]
 STATEMENT = [SPACE | WORD | STATEMENT]
 START = [STATEMENT | CRITERIA] 
-
+```

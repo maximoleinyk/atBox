@@ -9,7 +9,7 @@
 <script src="main.js"></script>
 <script>
   var node = document.getElementById('app-root');
-  var component = Elm.Main.embed(node);
+  var component = Elm.Box.embed(node);
 
   component.ports.logger.subscribe(function(state) {
     console.log(state);
