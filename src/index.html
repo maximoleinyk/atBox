@@ -3,20 +3,17 @@
 <head>
     <title>Elm Book</title>
     <link ref="stylesheet" href="styles/box.css" />
+    <script src="main.js"></script>
+    <script src="scripts/box.js"></script>
+    <style>
+
+    </style>
 </head>
 <body>
 <div id="app-root"></div>
-<script src="main.js"></script>
 <script>
-  var node = document.getElementById('app-root');
-  var component = Elm.Box.embed(node);
-
-  component.ports.logger.subscribe(function(state) {
-    console.log(state);
-  });
-
-  document.querySelector('button').addEventListener('click', function() {
-    component.ports.bus.send('Start');
+  box({
+    root: '#app-root'
   });
 </script>
 </body>
