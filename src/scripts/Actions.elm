@@ -2,4 +2,8 @@ port module Actions exposing (..)
 
 
 type Msg
-    = ParseString String
+    = Parse String
+    | EnterKeyPressed
+    | ArrowUpPressed
+    | ArrowDownPressed
+    | TabKeyPressed

@@ -1,2 +1,4 @@
 .idea
 elm-stuff
+node_modules
+src/main.js

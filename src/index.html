@@ -2,18 +2,18 @@
 <html>
 <head>
     <title>Elm Book</title>
-    <link ref="stylesheet" href="styles/box.css" />
+    <link rel="stylesheet" href="../node_modules/normalize.css/normalize.css"/>
+    <link rel="stylesheet" href="styles/box.css"/>
     <script src="main.js"></script>
     <script src="scripts/box.js"></script>
-    <style>
-
-    </style>
 </head>
 <body>
-<div id="app-root"></div>
+<div id="root">
+    <div class="app-root"></div>
+</div>
 <script>
   box({
-    root: '#app-root'
+    root: '.app-root'
   });
 </script>
 </body>

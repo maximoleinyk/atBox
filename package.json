@@ -1,0 +1,27 @@
+{
+  "name": "at-box",
+  "version": "1.0.0",
+  "description": "input = `find person whose @name is Maksym` ``` output = [     {         \"name\": {             operator: \"is\"             value: \"Maksym\"         }     } ]  ```",
+  "main": "src/main.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "normalize.css": "^7.0.0",
+    "object-assign": "^4.1.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maximoleinyk/atBox.git"
+  },
+  "author": "Maksym Oliinyk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/maximoleinyk/atBox/issues"
+  },
+  "homepage": "https://github.com/maximoleinyk/atBox#readme"
+}
