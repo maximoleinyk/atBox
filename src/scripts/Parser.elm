@@ -28,9 +28,22 @@ getPossibleStates state =
             []
 
 
-process : FsmState -> String -> List FsmState -> Dict String String -> List ParsedToken
-process state string queue loopDetectionDict =
+return : String -> FsmState -> (List String -> List String) -> List FsmState -> Dict String String -> List ParsedToken
+return string state parser queue newMapping =
     let
+        result =
+            Parsers.parse string parser
+    in
+    if result.length == -1 then
+        walk string queue newMapping
+    else
+        [ ParsedToken state result.string ] ++ walk result.newString queue newMapping
+
+
+process : String -> FsmState -> List FsmState -> Dict String String -> List ParsedToken
+process string state queue loopDetectionDict =
+    let
+        -- string neither exists or not equals in the loopDetectionDict
         newMapping =
             Dict.insert (toString state) string loopDetectionDict
     in
@@ -42,24 +55,10 @@ process state string queue loopDetectionDict =
             walk string queue newMapping
 
         Space ->
-            let
-                result =
-                    Parsers.parse string Parsers.space
-            in
-            if result.length == -1 then
-                walk string queue newMapping
-            else
-                [ ParsedToken state result.string ] ++ walk result.newString queue newMapping
+            return string state Parsers.space queue newMapping
 
         Word ->
-            let
-                result =
-                    Parsers.parse string Parsers.word
-            in
-            if result.length == -1 then
-                walk string queue newMapping
-            else
-                [ ParsedToken state result.string ] ++ walk result.newString queue newMapping
+            return string state Parsers.word queue newMapping
 
 
 walk : String -> List FsmState -> Dict String String -> List ParsedToken
@@ -92,14 +91,14 @@ walk string queue loopDetectionDict =
                 case previousString of
                     -- proceed if string does not exist
                     Nothing ->
-                        process state string newStatesQueue loopDetectionDict
+                        process string state newStatesQueue loopDetectionDict
 
                     Just previousString ->
-                        -- if both strings are equal - we are in the infinite loop
+                        -- if both strings are equal - we are inside infinite loop
                         if previousString == string then
                             []
                         else
-                            process state string newStatesQueue loopDetectionDict
+                            process string state newStatesQueue loopDetectionDict
 
 
 parse : String -> List ParsedToken
