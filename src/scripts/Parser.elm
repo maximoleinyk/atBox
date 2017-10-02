@@ -1,31 +1,11 @@
 module Parser exposing (parse)
 
 import Dict exposing (Dict)
+import Fsm
 import FsmState exposing (FsmState(..))
-import ParsedResult exposing (ParsedResult)
+import ParsedResult
+import ParsedToken exposing (ParsedToken)
 import Parsers
-
-
-type alias ParsedToken =
-    { state : FsmState
-    , string : String
-    }
-
-
-getPossibleStates : FsmState -> List FsmState
-getPossibleStates state =
-    case state of
-        Start ->
-            [ Statement ]
-
-        Statement ->
-            [ Space, Word, Statement ]
-
-        Space ->
-            []
-
-        Word ->
-            []
 
 
 return : String -> FsmState -> (List String -> List String) -> List FsmState -> Dict String String -> List ParsedToken
@@ -48,17 +28,14 @@ process string state queue loopDetectionDict =
             Dict.insert (toString state) string loopDetectionDict
     in
     case state of
-        Start ->
-            walk string queue newMapping
-
-        Statement ->
-            walk string queue newMapping
-
-        Space ->
+        SpaceTerm ->
             return string state Parsers.space queue newMapping
 
-        Word ->
+        WordTerm ->
             return string state Parsers.word queue newMapping
+
+        _ ->
+            walk string queue newMapping
 
 
 walk : String -> List FsmState -> Dict String String -> List ParsedToken
@@ -78,7 +55,7 @@ walk string queue loopDetectionDict =
                 let
                     -- get list of next states
                     possibleStates =
-                        getPossibleStates state
+                        Fsm.getPossibleStates state
 
                     -- prepend states of the current state to the rest
                     newStatesQueue =
@@ -89,15 +66,16 @@ walk string queue loopDetectionDict =
                         Dict.get (toString state) loopDetectionDict
                 in
                 case previousString of
-                    -- proceed if string does not exist
                     Nothing ->
+                        -- proceed if string does not exist
                         process string state newStatesQueue loopDetectionDict
 
                     Just previousString ->
-                        -- if both strings are equal - we are inside infinite loop
                         if previousString == string then
-                            []
+                            -- if both strings are equal - we are inside infinite loop - try to move to the next state
+                            walk string rest loopDetectionDict
                         else
+                            -- strings are different - there is a chance that we might on a correct branch
                             process string state newStatesQueue loopDetectionDict
 
 
