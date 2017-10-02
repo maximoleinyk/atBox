@@ -1,11 +1,11 @@
-module Parsers exposing (noParser, parseSpace, parseWord)
+module Parsers exposing (nothing, parse, space, word)
 
 import ParsedResult exposing (ParsedResult)
 import Regex exposing (HowMany(All))
 
 
-doParseWord : List String -> List String
-doParseWord string =
+word : List String -> List String
+word string =
     case string of
         [] ->
             []
@@ -15,7 +15,7 @@ doParseWord string =
                 _ ->
                     let
                         wordPattern =
-                            Regex.regex "\\S"
+                            Regex.regex "[^ @]"
 
                         foundResult =
                             Regex.find All wordPattern first
@@ -24,13 +24,13 @@ doParseWord string =
                             List.map .match foundResult
                     in
                     if List.length result > 0 then
-                        [ first ] ++ doParseWord rest
+                        [ first ] ++ word rest
                     else
                         []
 
 
-doParseSpace : List String -> List String
-doParseSpace string =
+space : List String -> List String
+space string =
     case string of
         [] ->
             []
@@ -38,19 +38,19 @@ doParseSpace string =
         first :: rest ->
             case first of
                 " " ->
-                    [ first ] ++ doParseSpace rest
+                    [ first ] ++ space rest
 
                 _ ->
                     []
 
 
-noParser : String -> ParsedResult
-noParser string =
-    ParsedResult "" -1 ""
+nothing : List String -> List String
+nothing string =
+    []
 
 
-genericParse : String -> (List String -> List String) -> ParsedResult
-genericParse string parseFunction =
+parse : String -> (List String -> List String) -> ParsedResult
+parse string parseFunction =
     let
         result =
             String.join "" (parseFunction (String.split "" string))
@@ -65,13 +65,3 @@ genericParse string parseFunction =
         ParsedResult "" -1 ""
     else
         ParsedResult result parsedLength newString
-
-
-parseSpace : String -> ParsedResult
-parseSpace string =
-    genericParse string doParseSpace
-
-
-parseWord : String -> ParsedResult
-parseWord string =
-    genericParse string doParseWord

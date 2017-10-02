@@ -6,5 +6,3 @@ type FsmState
     | Statement
     | Space
     | Word
-    | SpaceTerm
-    | CharTerm

@@ -2,7 +2,7 @@ module Update exposing (..)
 
 import Actions exposing (Msg(..))
 import Model exposing (Model)
-import Parser exposing (parse)
+import Parser
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -11,7 +11,7 @@ update msg model =
         Parse newValue ->
             let
                 parsedResult =
-                    parse newValue
+                    Parser.parse newValue
 
                 _ =
                     Debug.log "ParsedResult" parsedResult
