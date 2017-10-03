@@ -1,8 +1,8 @@
 module Update exposing (..)
 
 import Actions exposing (Msg(..))
+import Lexer
 import Model exposing (Model)
-import Parser
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -11,10 +11,10 @@ update msg model =
         Parse newValue ->
             let
                 parsedResult =
-                    Parser.parse newValue
+                    Lexer.evaluate newValue model
 
                 _ =
-                    Debug.log "ParsedResult" parsedResult
+                    Debug.log "Tokens" parsedResult
             in
             { model | value = newValue } ! []
 

@@ -15,4 +15,5 @@ type alias Model =
     , operators : List Operator
     , currentToken : String
     , selectedItem : String
+    , keywordDelimiter : String
     }

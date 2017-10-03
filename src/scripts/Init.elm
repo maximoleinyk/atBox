@@ -17,13 +17,13 @@ init flags =
 
 getInitialModel : Config -> Model
 getInitialModel flags =
-    { id = flags.id
-    , label = flags.label
-    , placeholder = flags.placeholder
-    , cursorPosition = NoContext
-    , queryFields = flags.queryFields
-    , value = ""
-    , operators =
+    Model
+        flags.id
+        flags.label
+        flags.placeholder
+        ""
+        flags.queryFields
+        NoContext
         [ Operator "or" "or" True
         , Operator "and" "and" True
         , Operator "is" "is" False
@@ -33,6 +33,6 @@ getInitialModel flags =
         , Operator "is in" "is in" False
         , Operator "is not in" "is not in" False
         ]
-    , currentToken = ""
-    , selectedItem = ""
-    }
+        ""
+        ""
+        "@"

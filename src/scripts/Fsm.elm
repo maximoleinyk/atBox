@@ -52,13 +52,13 @@ getPossibleStates state =
             [ NotOperator, EitherOperator, NeitherOperator ]
 
         NotOperator ->
-            [ Space, NotTerm, Value ]
+            [ Space, NotTerm ]
 
         NotTerm ->
             []
 
         Value ->
-            [ Space, Word, MultiQuotedWord ]
+            [ Space, MultiQuotedWord, Word ]
 
         MultiQuotedWord ->
             [ StartQuoteTerm, Statement, EndQuoteTerm ]
@@ -70,7 +70,7 @@ getPossibleStates state =
             []
 
         EitherOperator ->
-            [ Space, EitherTerm, Value, EitherOrOperator ]
+            [ Space, EitherTerm ]
 
         EitherTerm ->
             []
@@ -82,7 +82,7 @@ getPossibleStates state =
             []
 
         NeitherOperator ->
-            [ Space, NeitherTerm, Value, NeitherNorOperator ]
+            [ Space, NeitherTerm ]
 
         NeitherTerm ->
             []
@@ -97,10 +97,10 @@ getPossibleStates state =
             [ OperatorGroupOr, OperatorGroupAnd ]
 
         OperatorGroupOr ->
-            [ Space, OrTerm, Space, Criterion ]
+            [ Space, OrTerm ]
 
         OperatorGroupAnd ->
-            [ Space, AndTerm, Space, Criterion ]
+            [ Space, AndTerm ]
 
         AndTerm ->
             []
