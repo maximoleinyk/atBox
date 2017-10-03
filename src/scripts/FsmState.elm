@@ -4,11 +4,8 @@ module FsmState exposing (..)
 type FsmState
     = Start
     | Statement
-    | Space
     | SpaceTerm
-    | Word
     | WordTerm
-    | Keyword
     | KeywordTerm
     | Value
     | MultiQuotedWord
@@ -28,10 +25,15 @@ type FsmState
     | IsTerm
     | IsOperator
     | IsSubOperator
-    | NotOperator
     | EitherTerm
-    | EitherOperator
     | EitherOrOperator
     | NeitherTerm
-    | NeitherOperator
     | NeitherNorOperator
+    | UnknownKeywordTerm
+    | InTerm
+    | InOperator
+    | InValue
+    | OpenParenthesisTerm
+    | CloseParenthesisTerm
+    | CommaTerm
+    | InRepeatValue

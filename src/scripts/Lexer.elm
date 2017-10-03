@@ -13,9 +13,29 @@ return string model state parser queue newMapping =
     let
         result =
             Tokenizer.tokenize string parser model
+
+        newQueue =
+            \n q -> List.drop n q
     in
     if result.length == -1 then
-        walk string model queue newMapping
+        case state of
+            OpenParenthesisTerm ->
+                walk string model (newQueue 2 queue) newMapping
+
+            KeywordTerm ->
+                walk string model (UnknownKeywordTerm :: queue) newMapping
+
+            StartQuoteTerm ->
+                walk string model (newQueue 2 queue) newMapping
+
+            EitherTerm ->
+                walk string model (newQueue 6 queue) newMapping
+
+            NeitherTerm ->
+                walk string model (newQueue 6 queue) newMapping
+
+            _ ->
+                walk string model queue newMapping
     else
         [ Token state result ] ++ walk result.remainingString model queue newMapping
 
@@ -28,6 +48,18 @@ process string model state queue loopDetectionDict =
             Dict.insert (toString state) string loopDetectionDict
     in
     case state of
+        CommaTerm ->
+            return string model state Tokenizer.comma queue newMapping
+
+        CloseParenthesisTerm ->
+            return string model state Tokenizer.closeParenthesis queue newMapping
+
+        OpenParenthesisTerm ->
+            return string model state Tokenizer.openParenthesis queue newMapping
+
+        InTerm ->
+            return string model state Tokenizer.inTerm queue newMapping
+
         SpaceTerm ->
             return string model state Tokenizer.space queue newMapping
 
@@ -36,6 +68,9 @@ process string model state queue loopDetectionDict =
 
         KeywordTerm ->
             return string model state Tokenizer.keyword queue newMapping
+
+        UnknownKeywordTerm ->
+            return string model state Tokenizer.unknownKeyword queue newMapping
 
         StartQuoteTerm ->
             return string model state Tokenizer.startQuote queue newMapping

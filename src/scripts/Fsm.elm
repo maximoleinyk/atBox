@@ -10,19 +10,7 @@ getPossibleStates state =
             [ Statement, Criteria ]
 
         Statement ->
-            [ Space, Word, Statement ]
-
-        Space ->
-            [ SpaceTerm, Space ]
-
-        SpaceTerm ->
-            []
-
-        Word ->
-            [ WordTerm, Word ]
-
-        WordTerm ->
-            []
+            [ SpaceTerm, WordTerm, Statement ]
 
         Criteria ->
             [ Criterion, Criteria ]
@@ -31,76 +19,43 @@ getPossibleStates state =
             [ OperatorGroup, Conjunction ]
 
         OperatorGroup ->
-            [ Keyword, Space, Operator ]
-
-        Keyword ->
-            [ Space, KeywordTerm ]
-
-        KeywordTerm ->
-            []
+            [ KeywordTerm, SpaceTerm, Operator, SpaceTerm, Value ]
 
         Operator ->
             [ IsOperator ]
 
         IsOperator ->
-            [ Space, IsTerm, IsSubOperator, Value ]
-
-        IsTerm ->
-            []
+            [ IsTerm, SpaceTerm, IsSubOperator ]
 
         IsSubOperator ->
-            [ NotOperator, EitherOperator, NeitherOperator ]
-
-        NotOperator ->
-            [ Space, NotTerm ]
-
-        NotTerm ->
-            []
+            [ EitherOrOperator, NeitherNorOperator, NotTerm, SpaceTerm, InTerm ]
 
         Value ->
-            [ Space, MultiQuotedWord, Word ]
+            [ WordTerm, MultiQuotedWord, InValue ]
+
+        InValue ->
+            [ SpaceTerm, OpenParenthesisTerm, InRepeatValue, CloseParenthesisTerm ]
+
+        InRepeatValue ->
+            [ SpaceTerm, CommaTerm, Value, InRepeatValue ]
 
         MultiQuotedWord ->
             [ StartQuoteTerm, Statement, EndQuoteTerm ]
 
-        StartQuoteTerm ->
-            []
-
-        EndQuoteTerm ->
-            []
-
-        EitherOperator ->
-            [ Space, EitherTerm ]
-
-        EitherTerm ->
-            []
-
         EitherOrOperator ->
-            [ Space, OrTerm, Value, EitherOrOperator ]
-
-        OrTerm ->
-            []
-
-        NeitherOperator ->
-            [ Space, NeitherTerm ]
-
-        NeitherTerm ->
-            []
+            [ SpaceTerm, EitherTerm, SpaceTerm, Value, SpaceTerm, OrTerm, SpaceTerm, EitherOrOperator ]
 
         NeitherNorOperator ->
-            [ Space, NorTerm, Value, NeitherNorOperator ]
-
-        NorTerm ->
-            []
+            [ SpaceTerm, NeitherTerm, SpaceTerm, Value, SpaceTerm, NorTerm, SpaceTerm, NeitherNorOperator ]
 
         Conjunction ->
             [ OperatorGroupOr, OperatorGroupAnd ]
 
         OperatorGroupOr ->
-            [ Space, OrTerm ]
+            [ SpaceTerm, OrTerm ]
 
         OperatorGroupAnd ->
-            [ Space, AndTerm ]
+            [ SpaceTerm, AndTerm ]
 
-        AndTerm ->
+        _ ->
             []

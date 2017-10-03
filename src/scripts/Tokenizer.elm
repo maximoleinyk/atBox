@@ -22,6 +22,26 @@ regexTokenizer string pattern =
             ""
 
 
+closeParenthesis : String -> Model -> String
+closeParenthesis string model =
+    regexTokenizer string (Regex.regex "^(\\))")
+
+
+openParenthesis : String -> Model -> String
+openParenthesis string model =
+    regexTokenizer string (Regex.regex "^(\\()")
+
+
+inTerm : String -> Model -> String
+inTerm string model =
+    regexTokenizer string (Regex.regex "^(in)")
+
+
+comma : String -> Model -> String
+comma string model =
+    regexTokenizer string (Regex.regex "^(,)")
+
+
 is : String -> Model -> String
 is string model =
     regexTokenizer string (Regex.regex "^(is)")
@@ -49,7 +69,7 @@ not string model =
 
 and : String -> Model -> String
 and string model =
-    Debug.log "AND" (regexTokenizer string (Regex.regex "^(and)"))
+    regexTokenizer string (Regex.regex "^(and)")
 
 
 or : String -> Model -> String
@@ -70,9 +90,6 @@ endQuote string model =
 keyword : String -> Model -> String
 keyword string model =
     let
-        at =
-            model.keywordDelimiter
-
         possibleKeywords =
             List.map .field model.queryFields
 
@@ -80,9 +97,18 @@ keyword string model =
             String.join "|" possibleKeywords
 
         keywordPattern =
-            Regex.regex ("^" ++ at ++ "(" ++ concatenatedKeywordList ++ ")")
+            Regex.regex ("^" ++ model.keywordDelimiter ++ "(" ++ concatenatedKeywordList ++ ")")
     in
     regexTokenizer string keywordPattern
+
+
+unknownKeyword : String -> Model -> String
+unknownKeyword string model =
+    let
+        pattern =
+            Regex.regex ("^(" ++ model.keywordDelimiter ++ "\\S*)")
+    in
+    regexTokenizer string pattern
 
 
 word : String -> Model -> String
@@ -96,7 +122,7 @@ word string model =
                 _ ->
                     let
                         result =
-                            regexTokenizer first (Regex.regex "([^ @\"])")
+                            regexTokenizer first (Regex.regex "([^ @\",())])")
                     in
                     if result == "" then
                         ""

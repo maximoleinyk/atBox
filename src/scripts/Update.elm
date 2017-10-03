@@ -14,7 +14,7 @@ update msg model =
                     Lexer.evaluate newValue model
 
                 _ =
-                    Debug.log "Tokens" parsedResult
+                    Debug.log "" parsedResult
             in
             { model | value = newValue } ! []
 
