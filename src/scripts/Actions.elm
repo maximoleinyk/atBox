@@ -1,4 +1,4 @@
-port module Actions exposing (..)
+module Actions exposing (..)
 
 
 type Msg
@@ -7,3 +7,4 @@ type Msg
     | ArrowUpPressed
     | ArrowDownPressed
     | TabKeyPressed
+    | GetCaretPosition

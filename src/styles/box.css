@@ -12,7 +12,6 @@ body {
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
     background-color: #fff;
     padding: 20px;
-    border-radius: 3px;
 }
 .at-box label {
     display: inline-block;
@@ -29,7 +28,7 @@ body {
     background-image: none;
     background-clip: padding-box;
     border: 1px solid rgba(0,0,0,.15);
-    border-radius: .25rem;
+    border-radius: .1rem;
     transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
 }
 .at-box input:focus {

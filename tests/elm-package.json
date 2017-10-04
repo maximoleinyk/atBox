@@ -4,10 +4,20 @@
     "repository": "https://github.com/user/project.git",
     "license": "BSD3",
     "source-directories": [
-        "../src/page1",
-        "."
+        "../src/scripts",
+        ".",
+        "./tokenizer/and",
+        "./tokenizer/or",
+        "./tokenizer/contains",
+        "./tokenizer/is",
+        "./tokenizer/is/not",
+        "./tokenizer/is/not/in",
+        "./tokenizer/is/in",
+        "./tokenizer/is/either",
+        "./tokenizer/is/neither"
     ],
     "exposed-modules": [],
+    "native-modules": true,
     "dependencies": {
         "eeue56/elm-html-test": "5.1.1 <= v < 6.0.0",
         "elm-community/elm-test": "4.0.0 <= v < 5.0.0",

@@ -6,13 +6,14 @@ import Json.Decode exposing (decodeValue, list)
 import Maybe exposing (withDefault)
 import Model exposing (..)
 import Operator exposing (Operator)
+import Ports exposing (inputChangeEvent)
 import QueryField exposing (QueryField)
 import QueryType exposing (QueryType, queryTypeDecoder)
 
 
 init : Config -> ( Model, Cmd msg )
 init flags =
-    ( getInitialModel flags, Cmd.none )
+    ( getInitialModel flags, inputChangeEvent "[]" )
 
 
 getInitialModel : Config -> Model

@@ -63,36 +63,6 @@
     }
   }
   
-  function replaceSelectedText(elm, replaceString) {
-    var isInput = isInList(elm.nodeName.toLowerCase(), "input,textarea");
-    if (isInput && elm.setSelectionRange) {
-      var selectionStart = elm.selectionStart;
-      var selectionEnd = elm.selectionEnd;
-      elm.value = elm.value.substring(0, selectionStart) + replaceString
-        + elm.value.substring(selectionEnd);
-      if (selectionStart != selectionEnd) // has there been a selection
-        setSelectedTextRange(elm, selectionStart, selectionStart +
-          replaceString.length);
-      else // set caret
-        setCaretToPos(elm, selectionStart + replaceString.length);
-    }
-//  else if (!isInput && elm.ownerDocument) {
-//          elm.ownerDocument.defaultView.getSelection().deleteFromDocument() {
-//  }
-    else if (document.selection) {
-      var range = document.selection.createRange();
-      if (range.parentElement() == elm) {
-        var isCollapsed = range.text == '';
-        range.text = replaceString;
-        if (!isCollapsed) { // there has been a selection
-          //it appears range.select() should select the newly
-          //inserted text but that fails with IE
-          range.moveStart('character', -replaceString.length);
-          range.select();
-        }
-      }
-    }
-  }
   function GetCaretPosition(ctrl) {
     var CaretPos = 0;   // IE Support
     if (document.selection) {
@@ -119,22 +89,14 @@
     }
   }
   
-  function AlertPrevWord() {
-    var text = document.getElementById("textArea");
-    var caretPos = GetCaretPosition(text)
-    var word = ReturnWord(text.value, caretPos);
-    if (word != null) {
-      alert(word);
-    }
-  }
-  
   self.box = function(config) {
     const nodes = document.querySelectorAll(config.root);
+    const onChange = config.onChange || function() {};
     if (!nodes.length) {
       throw "You specified wrong query selector '" + config.root + "'";
     }
     nodes.forEach(function (node) {
-      Elm.Main.embed(node, Object.assign({
+      const component = Elm.Main.embed(node, Object.assign({
         id: 'search-box',
         label: "Label",
         queryFields: [
@@ -156,6 +118,16 @@
         ],
         placeholder: 'Click here and start typing'
       }, config || {}));
+  
+      component.ports.keyDownEvent.subscribe(function() {
+        const input = document.querySelector(config.root + ' input');
+        const caretPosition = getCaretPosition(input);
+        component.ports.caretPosition.send(caretPosition);
+      });
+      
+      component.ports.inputChangeEvent.subscribe(function(output) {
+        onChange(JSON.parse(output));
+      });
     });
   };
   

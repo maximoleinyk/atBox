@@ -10,75 +10,16 @@
 <body>
 <div id="root">
     <div class="app-root"></div>
-    <ul>
-        <li>
-            @name is not in ("Max", "July", "Dave")
-        </li>
-        <li>
-            find person whose @name is Maksym
-        </li>
-        <li>
-            find person whose @name is "Maksym"
-        </li>
-        <li>
-            find person whose @name is "Maksym Oliinyk"
-        </li>
-        <li>
-            @name is "Maksym Oliinyk"
-        </li>
-        <li>
-            find person with name Maksym
-        </li>
-        <li>
-            find person whose name is Maksym
-        </li>
-        <li>
-            find person whose @ name is Maksym
-        </li>
-        <li>
-            find person whose @name is not Maksym
-        </li>
-        <li>
-            find person whose @name is not "Maksym"
-        </li>
-        <li>
-            find person whose @name is not Maksym Oliinyk
-        </li>
-        <li>
-            find person whose @name is not "Maksym Oliinyk"
-        </li>
-        <li>
-            @forename is either Maksym or Viktor
-        </li>
-        <li>
-            @forename is either Maksym or Viktor or Julia
-        </li>
-        <li>
-            @forename is neither Maksym nor Viktor
-        </li>
-        <li>
-            @forename is neither Maksym nor Viktor nor Julia
-        </li>
-        <li>
-            find person whose @forename is Maksym and @surname Oliinyk
-        </li>
-        <li>
-            @forename is Maksym and @surname is Oliinyk
-        </li>
-        <li>
-            @forename is in (Maksym, Viktor) or @forename is in (Alex, Julia)
-        </li>
-        <li>
-            @forename is Maksym and @surname is either Ivanov or Petrov
-        </li>
-        <li>
-            @forename is Maksym and @surname is either Ivanov or Petrov or @forename is Viktor and @surname is neither Sokolov nor Smirnov
-        </li>
-    </ul>
+    <pre class="output" style="font-size:11px"></pre>
 </div>
 <script>
   box({
-    root: '.app-root'
+    root: '.app-root',
+    label: 'Query',
+    placeholder: 'Ex: @name is Joe',
+    onChange: function(outputJSON) {
+        document.querySelector('.output').innerHTML = JSON.stringify(outputJSON, null, 2);
+    }
   });
 </script>
 </body>

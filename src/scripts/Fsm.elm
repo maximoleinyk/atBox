@@ -16,7 +16,7 @@ getPossibleStates state =
             [ Criterion, Criteria ]
 
         Criterion ->
-            [ OperatorGroup, Conjunction ]
+            [ OpenParenthesisTerm, SpaceTerm, OperatorGroup, SpaceTerm, CloseParenthesisTerm, SpaceTerm, Conjunction ]
 
         OperatorGroup ->
             [ KeywordTerm, SpaceTerm, Operator, SpaceTerm, Value ]

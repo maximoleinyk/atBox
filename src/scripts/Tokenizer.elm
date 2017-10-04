@@ -34,7 +34,7 @@ openParenthesis string model =
 
 inTerm : String -> Model -> String
 inTerm string model =
-    regexTokenizer string (Regex.regex "^(in)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(in)"))
 
 
 comma : String -> Model -> String
@@ -44,37 +44,37 @@ comma string model =
 
 is : String -> Model -> String
 is string model =
-    regexTokenizer string (Regex.regex "^(is)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is)"))
 
 
 either : String -> Model -> String
 either string model =
-    regexTokenizer string (Regex.regex "^(either)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(either)"))
 
 
 neither : String -> Model -> String
 neither string model =
-    regexTokenizer string (Regex.regex "^(neither)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(neither)"))
 
 
 nor : String -> Model -> String
 nor string model =
-    regexTokenizer string (Regex.regex "^(nor)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(nor)"))
 
 
 not : String -> Model -> String
 not string model =
-    regexTokenizer string (Regex.regex "^(not)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(not)"))
 
 
 and : String -> Model -> String
 and string model =
-    regexTokenizer string (Regex.regex "^(and)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(and)"))
 
 
 or : String -> Model -> String
 or string model =
-    regexTokenizer string (Regex.regex "^(or)")
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(or)"))
 
 
 startQuote : String -> Model -> String
@@ -97,7 +97,7 @@ keyword string model =
             String.join "|" possibleKeywords
 
         keywordPattern =
-            Regex.regex ("^" ++ model.keywordDelimiter ++ "(" ++ concatenatedKeywordList ++ ")")
+            Regex.caseInsensitive (Regex.regex ("^" ++ model.keywordDelimiter ++ "(" ++ concatenatedKeywordList ++ ")"))
     in
     regexTokenizer string keywordPattern
 
@@ -106,7 +106,7 @@ unknownKeyword : String -> Model -> String
 unknownKeyword string model =
     let
         pattern =
-            Regex.regex ("^(" ++ model.keywordDelimiter ++ "\\S*)")
+            Regex.caseInsensitive (Regex.regex ("^(" ++ model.keywordDelimiter ++ "\\S*)"))
     in
     regexTokenizer string pattern
 

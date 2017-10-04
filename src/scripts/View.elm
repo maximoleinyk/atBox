@@ -13,6 +13,11 @@ import QueryField exposing (QueryField)
 import String exposing (contains, toLower)
 
 
+onCaretPositionUpdate : Attribute Msg
+onCaretPositionUpdate =
+    on "keyup" (succeed GetCaretPosition)
+
+
 onKeyHandle : Model -> Attribute Msg
 onKeyHandle model =
     let
@@ -54,6 +59,7 @@ view model =
                 , placeholder model.placeholder
                 , onInput Parse
                 , onKeyHandle model
+                , onCaretPositionUpdate
                 ]
                 []
             ]
