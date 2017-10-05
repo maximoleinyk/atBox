@@ -1,0 +1,100 @@
+module Case_1_2_4 exposing (..)
+
+import Expect
+import FsmState exposing (FsmType(..))
+import MockModel exposing (getDefaultModel)
+import Test exposing (Test, describe, test)
+import Tokenizer
+
+
+suite : Test
+suite =
+    let
+        testCase =
+            "@name is not \"Maksym Oliinyk\""
+    in
+    describe "Tokenizer.run"
+        [ describe "is"
+            [ test testCase <|
+                \_ ->
+                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                        [ { state = KeywordTerm
+                          , parsedToken =
+                                { string = "@name"
+                                , length = 5
+                                , remainingString = " is not \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "is not \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = IsTerm
+                          , parsedToken =
+                                { string = "is"
+                                , length = 2
+                                , remainingString = " not \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "not \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = NotTerm
+                          , parsedToken =
+                                { string = "not"
+                                , length = 3
+                                , remainingString = " \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "\"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = StartQuoteTerm
+                          , parsedToken =
+                                { string = "\""
+                                , length = 1
+                                , remainingString = "Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "Maksym"
+                                , length = 6
+                                , remainingString = " Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "Oliinyk\""
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "Oliinyk"
+                                , length = 7
+                                , remainingString = "\""
+                                }
+                          }
+                        , { state = EndQuoteTerm
+                          , parsedToken =
+                                { string = "\""
+                                , length = 1
+                                , remainingString = ""
+                                }
+                          }
+                        ]
+            ]
+        ]

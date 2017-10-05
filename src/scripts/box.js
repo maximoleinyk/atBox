@@ -114,6 +114,11 @@
             field: 'surname',
             label: 'Surname',
             queryType: 'string'
+          },
+          {
+            field: 'age',
+            label: 'Age',
+            queryType: 'string'
           }
         ],
         placeholder: 'Click here and start typing'

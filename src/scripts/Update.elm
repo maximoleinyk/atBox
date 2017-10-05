@@ -5,6 +5,7 @@ import Lexer
 import Model exposing (Model)
 import Ports exposing (inputChangeEvent, keyDownEvent)
 import TokenEncoder
+import Tokenizer
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -16,10 +17,13 @@ update msg model =
         Parse newValue ->
             let
                 tokens =
-                    Lexer.evaluate newValue model
+                    Tokenizer.run newValue model
+
+                lexemes =
+                    Lexer.evaluate tokens model
 
                 result =
-                    TokenEncoder.encodeTokens tokens
+                    TokenEncoder.encodeTokens (Debug.log "tokens" tokens)
             in
             ( { model | value = newValue }, inputChangeEvent result )
 

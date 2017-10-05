@@ -1,4 +1,4 @@
-module Case_1_1_1 exposing (..)
+module Case_1_3_4 exposing (..)
 
 import Expect
 import FsmState exposing (FsmType(..))
@@ -11,101 +11,115 @@ suite : Test
 suite =
     let
         testCase =
-            "find a person whose @name is Maksym"
+            "@forename is neither Maksym nor Viktor nor Julia"
     in
     describe "Tokenizer.run"
         [ describe "is"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)
-                        [ { state = WordTerm
+                        [ { state = KeywordTerm
                           , parsedToken =
-                                { string = "find"
-                                , length = 4
-                                , remainingString = " a person whose @name is Maksym"
+                                { string = "@forename"
+                                , length = 9
+                                , remainingString = " is neither Maksym nor Viktor nor Julia"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "a person whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "a"
-                                , length = 1
-                                , remainingString = " person whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "person whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "person"
-                                , length = 6
-                                , remainingString = " whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "whose"
-                                , length = 5
-                                , remainingString = " @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "@name is Maksym"
-                                }
-                          }
-                        , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@name"
-                                , length = 5
-                                , remainingString = " is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "is Maksym"
+                                , remainingString = "is neither Maksym nor Viktor nor Julia"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " Maksym"
+                                , remainingString = " neither Maksym nor Viktor nor Julia"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Maksym"
+                                , remainingString = "neither Maksym nor Viktor nor Julia"
+                                }
+                          }
+                        , { state = NeitherTerm
+                          , parsedToken =
+                                { string = "neither"
+                                , length = 7
+                                , remainingString = " Maksym nor Viktor nor Julia"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "Maksym nor Viktor nor Julia"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Maksym"
                                 , length = 6
+                                , remainingString = " nor Viktor nor Julia"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "nor Viktor nor Julia"
+                                }
+                          }
+                        , { state = NorTerm
+                          , parsedToken =
+                                { string = "nor"
+                                , length = 3
+                                , remainingString = " Viktor nor Julia"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "Viktor nor Julia"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "Viktor"
+                                , length = 6
+                                , remainingString = " nor Julia"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "nor Julia"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "nor"
+                                , length = 3
+                                , remainingString = " Julia"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "Julia"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "Julia"
+                                , length = 5
                                 , remainingString = ""
                                 }
                           }

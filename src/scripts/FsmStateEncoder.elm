@@ -1,9 +1,9 @@
 module FsmStateEncoder exposing (..)
 
-import FsmState exposing (FsmState)
+import FsmState exposing (FsmType)
 import Json.Encode exposing (Value, string)
 
 
-encodeState : FsmState -> Value
+encodeState : FsmType -> Value
 encodeState =
     \state -> string (toString state)

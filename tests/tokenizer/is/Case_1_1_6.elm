@@ -1,4 +1,4 @@
-module Case_1_1_1 exposing (..)
+module Case_1_1_6 exposing (..)
 
 import Expect
 import FsmState exposing (FsmType(..))
@@ -11,7 +11,7 @@ suite : Test
 suite =
     let
         testCase =
-            "find a person whose @name is Maksym"
+            "find a person whose @ name is Maksym"
     in
     describe "Tokenizer.run"
         [ describe "is"
@@ -22,62 +22,76 @@ suite =
                           , parsedToken =
                                 { string = "find"
                                 , length = 4
-                                , remainingString = " a person whose @name is Maksym"
+                                , remainingString = " a person whose @ name is Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "a person whose @name is Maksym"
+                                , remainingString = "a person whose @ name is Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "a"
                                 , length = 1
-                                , remainingString = " person whose @name is Maksym"
+                                , remainingString = " person whose @ name is Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "person whose @name is Maksym"
+                                , remainingString = "person whose @ name is Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "person"
                                 , length = 6
-                                , remainingString = " whose @name is Maksym"
+                                , remainingString = " whose @ name is Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "whose @name is Maksym"
+                                , remainingString = "whose @ name is Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "whose"
                                 , length = 5
-                                , remainingString = " @name is Maksym"
+                                , remainingString = " @ name is Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "@name is Maksym"
+                                , remainingString = "@ name is Maksym"
                                 }
                           }
-                        , { state = KeywordTerm
+                        , { state = UnknownKeywordTerm
                           , parsedToken =
-                                { string = "@name"
-                                , length = 5
+                                { string = "@"
+                                , length = 1
+                                , remainingString = " name is Maksym"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "name is Maksym"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "name"
+                                , length = 4
                                 , remainingString = " is Maksym"
                                 }
                           }
@@ -88,7 +102,7 @@ suite =
                                 , remainingString = "is Maksym"
                                 }
                           }
-                        , { state = IsTerm
+                        , { state = WordTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2

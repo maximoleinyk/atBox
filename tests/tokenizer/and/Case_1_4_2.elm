@@ -1,4 +1,4 @@
-module Case_1_1_1 exposing (..)
+module Case_1_4_2 exposing (..)
 
 import Expect
 import FsmState exposing (FsmType(..))
@@ -11,101 +11,129 @@ suite : Test
 suite =
     let
         testCase =
-            "find a person whose @name is Maksym"
+            "@age is 26 and @name is \"Maksym Oliinyk\""
     in
     describe "Tokenizer.run"
         [ describe "is"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)
-                        [ { state = WordTerm
+                        [ { state = KeywordTerm
                           , parsedToken =
-                                { string = "find"
+                                { string = "@age"
                                 , length = 4
-                                , remainingString = " a person whose @name is Maksym"
+                                , remainingString = " is 26 and @name is \"Maksym Oliinyk\""
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "a person whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "a"
-                                , length = 1
-                                , remainingString = " person whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "person whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "person"
-                                , length = 6
-                                , remainingString = " whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "whose"
-                                , length = 5
-                                , remainingString = " @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "@name is Maksym"
-                                }
-                          }
-                        , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@name"
-                                , length = 5
-                                , remainingString = " is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "is Maksym"
+                                , remainingString = "is 26 and @name is \"Maksym Oliinyk\""
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " Maksym"
+                                , remainingString = " 26 and @name is \"Maksym Oliinyk\""
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Maksym"
+                                , remainingString = "26 and @name is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "26"
+                                , length = 2
+                                , remainingString = " and @name is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "and @name is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = AndTerm
+                          , parsedToken =
+                                { string = "and"
+                                , length = 3
+                                , remainingString = " @name is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "@name is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = KeywordTerm
+                          , parsedToken =
+                                { string = "@name"
+                                , length = 5
+                                , remainingString = " is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "is \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = IsTerm
+                          , parsedToken =
+                                { string = "is"
+                                , length = 2
+                                , remainingString = " \"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "\"Maksym Oliinyk\""
+                                }
+                          }
+                        , { state = StartQuoteTerm
+                          , parsedToken =
+                                { string = "\""
+                                , length = 1
+                                , remainingString = "Maksym Oliinyk\""
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Maksym"
                                 , length = 6
+                                , remainingString = " Oliinyk\""
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "Oliinyk\""
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "Oliinyk"
+                                , length = 7
+                                , remainingString = "\""
+                                }
+                          }
+                        , { state = EndQuoteTerm
+                          , parsedToken =
+                                { string = "\""
+                                , length = 1
                                 , remainingString = ""
                                 }
                           }

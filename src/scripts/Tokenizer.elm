@@ -1,8 +1,23 @@
-module Tokenizer exposing (..)
+module Tokenizer exposing (run)
 
+import Dict exposing (Dict)
+import FsmState exposing (FsmType(..))
 import Model exposing (Model)
 import ParsedToken exposing (ParsedToken)
 import Regex exposing (HowMany(All), Regex)
+import Token exposing (Token)
+
+
+run : String -> Model -> List Token
+run string model =
+    let
+        initialState =
+            Start
+
+        loopDetection =
+            Dict.empty
+    in
+    walk string model [ initialState ] loopDetection Start
 
 
 regexTokenizer : String -> Regex -> String
@@ -15,8 +30,8 @@ regexTokenizer string pattern =
             List.head (List.map .match patternMatches)
     in
     case result of
-        Just parsedString ->
-            parsedString
+        Just string ->
+            string
 
         Nothing ->
             ""
@@ -146,18 +161,222 @@ space string model =
 
 
 tokenize : String -> (String -> Model -> String) -> Model -> ParsedToken
-tokenize string parser model =
+tokenize string tokenizer model =
     let
         result =
-            parser string model
+            tokenizer string model
 
-        parsedLength =
+        length =
             String.length result
 
         remainingString =
-            String.slice parsedLength (String.length string) string
+            String.slice length (String.length string) string
     in
-    if parsedLength == 0 then
+    if length == 0 then
         ParsedToken "" -1 ""
     else
-        ParsedToken result parsedLength remainingString
+        ParsedToken result length remainingString
+
+
+return : String -> Model -> FsmType -> (String -> Model -> String) -> List FsmType -> Dict String String -> FsmType -> List Token
+return string model state tokenizer queue newMapping parentState =
+    let
+        result =
+            tokenize string tokenizer model
+
+        newQueue =
+            \n q -> List.drop n q
+    in
+    if result.length == -1 then
+        case state of
+            OpenParenthesisTerm ->
+                let
+                    numberOfStatesToDrop =
+                        if parentState == Criterion then
+                            1
+                        else
+                            2
+                in
+                walk string model (newQueue numberOfStatesToDrop queue) newMapping parentState
+
+            KeywordTerm ->
+                walk string model (UnknownKeywordTerm :: queue) newMapping parentState
+
+            StartQuoteTerm ->
+                walk string model (newQueue 2 queue) newMapping parentState
+
+            EitherTerm ->
+                walk string model (newQueue 6 queue) newMapping parentState
+
+            NeitherTerm ->
+                walk string model (newQueue 6 queue) newMapping parentState
+
+            _ ->
+                walk string model queue newMapping parentState
+    else
+        [ Token state result ] ++ walk result.remainingString model queue newMapping parentState
+
+
+process : String -> Model -> FsmType -> List FsmType -> Dict String String -> FsmType -> List Token
+process string model state queue loopDetectionDict parentState =
+    let
+        -- string neither exists or not equals in the loopDetectionDict
+        newMapping =
+            Dict.insert (toString state) string loopDetectionDict
+    in
+    case state of
+        CommaTerm ->
+            return string model state comma queue newMapping parentState
+
+        CloseParenthesisTerm ->
+            return string model state closeParenthesis queue newMapping parentState
+
+        OpenParenthesisTerm ->
+            return string model state openParenthesis queue newMapping parentState
+
+        InTerm ->
+            return string model state inTerm queue newMapping parentState
+
+        SpaceTerm ->
+            return string model state space queue newMapping parentState
+
+        WordTerm ->
+            return string model state word queue newMapping parentState
+
+        KeywordTerm ->
+            return string model state keyword queue newMapping parentState
+
+        UnknownKeywordTerm ->
+            return string model state unknownKeyword queue newMapping parentState
+
+        StartQuoteTerm ->
+            return string model state startQuote queue newMapping parentState
+
+        EndQuoteTerm ->
+            return string model state endQuote queue newMapping parentState
+
+        AndTerm ->
+            return string model state and queue newMapping parentState
+
+        OrTerm ->
+            return string model state or queue newMapping parentState
+
+        NorTerm ->
+            return string model state nor queue newMapping parentState
+
+        NotTerm ->
+            return string model state not queue newMapping parentState
+
+        IsTerm ->
+            return string model state is queue newMapping parentState
+
+        EitherTerm ->
+            return string model state either queue newMapping parentState
+
+        NeitherTerm ->
+            return string model state neither queue newMapping parentState
+
+        _ ->
+            walk string model queue newMapping state
+
+
+walk : String -> Model -> List FsmType -> Dict String String -> FsmType -> List Token
+walk string model queue loopDetectionDict parentState =
+    -- empty string means we finished parsing
+    if string == "" then
+        []
+    else
+        -- asses queue of upcoming states
+        case queue of
+            -- is queue is empty it means we finished parsing
+            [] ->
+                []
+
+            -- process first state
+            state :: rest ->
+                let
+                    -- get list of next states
+                    possibleStates =
+                        getPossibleStates state
+
+                    -- prepend states of the current state to the rest
+                    newStatesQueue =
+                        possibleStates ++ rest
+
+                    -- get previous state of the entry when we were in this state
+                    previousString =
+                        Dict.get (toString state) loopDetectionDict
+
+                    _ =
+                        Debug.log (toString state) newStatesQueue
+                in
+                case previousString of
+                    Nothing ->
+                        -- proceed if string does not exist
+                        process string model state newStatesQueue loopDetectionDict parentState
+
+                    Just previousString ->
+                        if previousString == string then
+                            -- if both strings are equal - we are inside infinite loop - try to move to the next state
+                            walk string model rest loopDetectionDict state
+                        else
+                            -- strings are different - there is a chance that we might on a correct branch
+                            process string model state newStatesQueue loopDetectionDict parentState
+
+
+getPossibleStates : FsmType -> List FsmType
+getPossibleStates state =
+    case state of
+        Start ->
+            [ Statement, Criteria ]
+
+        Statement ->
+            [ SpaceTerm, WordTerm, Statement ]
+
+        Criteria ->
+            [ Criterion, Start ]
+
+        Criterion ->
+            [ OpenParenthesisTerm, SpaceTerm, OperatorGroup, SpaceTerm, CloseParenthesisTerm, SpaceTerm, Conjunction ]
+
+        OperatorGroup ->
+            [ KeywordTerm, SpaceTerm, Operator, SpaceTerm, Value ]
+
+        Operator ->
+            [ IsOperator ]
+
+        IsOperator ->
+            [ IsTerm, SpaceTerm, IsSubOperator ]
+
+        IsSubOperator ->
+            [ EitherOrOperator, NeitherNorOperator, NotTerm, SpaceTerm, InTerm ]
+
+        Value ->
+            [ WordTerm, MultiQuotedWord, InValue ]
+
+        InValue ->
+            [ SpaceTerm, OpenParenthesisTerm, InRepeatValue, CloseParenthesisTerm ]
+
+        InRepeatValue ->
+            [ SpaceTerm, CommaTerm, Value, InRepeatValue ]
+
+        MultiQuotedWord ->
+            [ StartQuoteTerm, Statement, EndQuoteTerm ]
+
+        EitherOrOperator ->
+            [ SpaceTerm, EitherTerm, SpaceTerm, Value, SpaceTerm, OrTerm, SpaceTerm, EitherOrOperator ]
+
+        NeitherNorOperator ->
+            [ SpaceTerm, NeitherTerm, SpaceTerm, Value, SpaceTerm, NorTerm, SpaceTerm, NeitherNorOperator ]
+
+        Conjunction ->
+            [ OperatorGroupOr, OperatorGroupAnd ]
+
+        OperatorGroupOr ->
+            [ SpaceTerm, OrTerm ]
+
+        OperatorGroupAnd ->
+            [ SpaceTerm, AndTerm ]
+
+        _ ->
+            []

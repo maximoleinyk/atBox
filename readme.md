@@ -3,7 +3,7 @@
 ## Is
         
 ### Case 1.1.1:
-input = `find person whose @name is Maksym`
+input = `find a person whose @name is Maksym`
 ```
 output = [
     {
@@ -30,7 +30,7 @@ output = [
 ```
    
 ### Case 1.1.3:
-input = `find person whose @name is "Maksym Oliinyk"`
+input = `find a person whose @name is "Maksym Oliinyk"`
 ```
 output = [
     {
@@ -56,21 +56,42 @@ output = [
 ```
     
 ### Case 1.1.5:
-input = `find person with name Maksym`    
+input = `find a person whose name Maksym`    
 ```
 output = [
 ]        
 ```
-    
+
 ### Case 1.1.6:
-input = `find person whose name is Maksym`    
+input = `find a person whose @ name is Maksym`    
 ```
 output = [
 ]        
 ```
 
 ### Case 1.1.7:
-input = `find person whose @ name is Maksym`    
+input = `find@name is Maksym`    
+```
+output = [
+]       
+```
+
+### Case 1.1.8:
+input = `@@@name is Max`    
+```
+output = [
+]        
+```
+
+### Case 1.1.9:
+input = `@nonexistingfield is Max`    
+```
+output = [
+]        
+```
+
+### Case 1.1.10:
+input = `@name could be or is Maksym Oliinyk`    
 ```
 output = [
 ]        
@@ -79,12 +100,12 @@ output = [
 ## Is not
 
 ### Case 1.2.1:
-input = `find person whose @name is not Maksym`    
+input = `@name is not Maksym`    
 ```
 output = [
     {
         "name": {
-            operator: "is not"
+            operator: "not"
             value: "Maksym"
         }
     }    
@@ -92,12 +113,12 @@ output = [
 ```
 
 ### Case 1.2.2:
-input = `find person whose @name is not "Maksym"`    
+input = `@name is something not something Maksym`    
 ```
 output = [
     {
         "name": {
-            operator: "is not"
+            operator: "not"
             value: "Maksym"
         }
     }    
@@ -105,25 +126,25 @@ output = [
 ```
 
 ### Case 1.2.3:
-input = `find person whose @name is not Maksym Oliinyk`    
+input = `find a person whose @name is not Maksym Oliinyk`    
 ```
 output = [
     {
         "name": {
-            operator: "is not"
-            value: "Maksym Oliinyk"
+            operator: "not"
+            value: "Maksym"
         }
     }
 ]        
 ```
 
 ### Case 1.2.4:
-input = `find person whose @name is not "Maksym Oliinyk"`    
+input = `@name is not "Maksym Oliinyk"`    
 ```
 output = [
     {
         "name": {
-            operator: "is not"
+            operator: "not"
             value: "Maksym Oliinyk"
         }
     }
@@ -138,7 +159,7 @@ input = `@forename is either Maksym or Viktor`
 output = [
     {
         forename: {
-            operator: "is in",
+            operator: "in",
             value: [
                 "Maksym", 
                 "Viktor"
@@ -149,13 +170,13 @@ output = [
 ```
 
 ### Case 1.3.2:
-input = `@forename is either Maksym or Viktor or Julia or ...`    
+input = `@forename is either Maksym or Viktor or Julia`    
 ```
 output = [
     {
         forename: {
-            operator: "is in",
-            value: ["Maksym", "Viktor", "Julia", ... ]
+            operator: "in",
+            value: ["Maksym", "Viktor", "Julia"]
         }
     }
 ]     
@@ -167,7 +188,7 @@ input = `@forename is neither Maksym nor Viktor`
 output = [
     {
         forename: {
-            operator: "is not in",
+            operator: "not in",
             value: ["Maksym", "Viktor"]
         }
     }
@@ -175,22 +196,22 @@ output = [
 ```
 
 ### Case 1.3.4:
-input = `@forename is neither Maksym nor Viktor nor Julia nor ...`    
+input = `@forename is neither Maksym nor Viktor nor Julia`    
 ```
 output = [
     {
         forename: {
-            operator: "is not in",
-            value: ["Maksym", "Viktor", "Julia", ... ]
+            operator: "not in",
+            value: ["Maksym", "Viktor", "Julia"]
         }
     }
 ]     
 ```
 
-## And / Or
+## And
 
 ### Case 1.4.1:
-input = `find person whose @forename is Maksym and @surname Oliinyk`    
+input = `@forename is Maksym and @surname Oliinyk and @age is 26`    
 ```
 output = [
     {
@@ -201,48 +222,33 @@ output = [
         surname: {
             operator: "is",
             value: "Oliinyk"
+        },
+        age: {
+            operator: "is",
+            value: 26
         }
     }
 ]     
 ```
 
 ### Case 1.4.2:
-input = `@forename is Maksym and @surname is Oliinyk`    
+input = `@age is 26 and @name is "Maksym Oliinyk"`    
 ```
 output = [
     {
-        forename: {
+        age: {
             operator: "is",
-            value: "Maksym"
+            value: 26
         },
-        surname: {
+        name: {
             operator: "is",
-            value: "Oliinyk"
+            value: "Maksym Oliinyk"
         }
     }
 ]     
 ```
 
 ### Case 1.4.3:
-input = `@forename is in (Maksym, Viktor) or @forename is in (Alex, Julia)`    
-```
-output = [
-    {
-        forename: {
-            operator: "is in",
-            value: ["Maksym", "Viktor"]
-        }
-    },
-    {
-        forename: {
-            operator: "is in",
-            value: ["Alex", "Julia"]
-        }
-    }
-]     
-```
-
-### Case 1.3.4:
 input = `@forename is Maksym and @surname is either Ivanov or Petrov`    
 ```
 output = [
@@ -252,14 +258,37 @@ output = [
             value: "Maksym"
         },
         surname: {
-            operator: "is in",
+            operator: "in",
             value: ["Ivanov", "Petrov"] 
         }
     }
 ]     
 ```
 
-### Case 1.3.5:
+## Or
+
+### Case 1.5.1:
+input = `@forename is Maksym or @surname Oliinyk`    
+```
+output = [
+    {
+        forename: {
+            operator: "is",
+            value: "Maksym"
+        },
+        surname: {
+            operator: "is",
+            value: "Oliinyk"
+        },
+        age: {
+            operator: "is",
+            value: 26
+        }
+    }
+]     
+```
+
+### Case 1.5.2:
 input = `@forename is Maksym and @surname is either Ivanov or Petrov 
             or @forename is Viktor and @surname is neither Sokolov nor Smirnov`             
 ```
@@ -270,7 +299,7 @@ output = [
             value: "Maksym"
         },
         surname: {
-            operator: "is in",
+            operator: "in",
             value: ["Ivanov", "Petrov"] 
         }
     },
@@ -280,12 +309,66 @@ output = [
             value: "Viktor"
         },
         surname: {
-            operator: "is not in",
+            operator: "not in",
             value: ["Ivanov", "Petrov"] 
         }
     }
 ]     
 ```
+
+## In
+
+### Case 1.6.1:
+input = `@forename is in (Maksym, Viktor)`    
+```
+output = [
+    {
+        forename: {
+            operator: "in",
+            value: ["Maksym", "Viktor"]
+        }
+    }
+]     
+```
+
+### Case 1.6.2:
+input = `@forename is in ()`    
+```
+output = [
+    {
+        forename: {
+            operator: "in",
+            value: []
+        }
+    }
+]     
+```
+
+### Case 1.6.3:
+input = `@forename is in`    
+```
+output = []     
+```
+
+### Case 1.7.1:
+input = `@forename is in (Maksym, Viktor) or @forename is not in (Alex, Julia)`    
+```
+output = [
+    {
+        forename: {
+            operator: "in",
+            value: ["Maksym", "Viktor"]
+        }
+    },
+    {
+        forename: {
+            operator: "not in",
+            value: ["Alex", "Julia"]
+        }
+    }
+]     
+```
+
 
 ## Terminal symbols:
 

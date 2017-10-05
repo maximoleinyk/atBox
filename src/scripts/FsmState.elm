@@ -1,7 +1,7 @@
 module FsmState exposing (..)
 
 
-type FsmState
+type FsmType
     = Start
     | Statement
     | SpaceTerm

@@ -1,4 +1,4 @@
-module Case_1_1_1 exposing (..)
+module Case_1_2_2 exposing (..)
 
 import Expect
 import FsmState exposing (FsmType(..))
@@ -11,87 +11,73 @@ suite : Test
 suite =
     let
         testCase =
-            "find a person whose @name is Maksym"
+            "@name is something not something Maksym"
     in
     describe "Tokenizer.run"
         [ describe "is"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)
-                        [ { state = WordTerm
-                          , parsedToken =
-                                { string = "find"
-                                , length = 4
-                                , remainingString = " a person whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "a person whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "a"
-                                , length = 1
-                                , remainingString = " person whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "person whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "person"
-                                , length = 6
-                                , remainingString = " whose @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "whose @name is Maksym"
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "whose"
-                                , length = 5
-                                , remainingString = " @name is Maksym"
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                , remainingString = "@name is Maksym"
-                                }
-                          }
-                        , { state = KeywordTerm
+                        [ { state = KeywordTerm
                           , parsedToken =
                                 { string = "@name"
                                 , length = 5
-                                , remainingString = " is Maksym"
+                                , remainingString = " is something not something Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "is Maksym"
+                                , remainingString = "is something not something Maksym"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
+                                , remainingString = " something not something Maksym"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "something not something Maksym"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "something"
+                                , length = 9
+                                , remainingString = " not something Maksym"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "not something Maksym"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "not"
+                                , length = 3
+                                , remainingString = " something Maksym"
+                                }
+                          }
+                        , { state = SpaceTerm
+                          , parsedToken =
+                                { string = " "
+                                , length = 1
+                                , remainingString = "something Maksym"
+                                }
+                          }
+                        , { state = WordTerm
+                          , parsedToken =
+                                { string = "something"
+                                , length = 9
                                 , remainingString = " Maksym"
                                 }
                           }

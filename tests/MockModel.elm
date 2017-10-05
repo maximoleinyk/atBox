@@ -16,6 +16,7 @@ getDefaultModel =
         [ QueryField "name" "name" "string"
         , QueryField "surname" "surname" "string"
         , QueryField "forename" "forename" "string"
+        , QueryField "age" "age" "string"
         ]
         NoContext
         [ Operator "or" "or" True

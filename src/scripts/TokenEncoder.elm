@@ -1,6 +1,6 @@
 module TokenEncoder exposing (..)
 
-import FsmState exposing (FsmState)
+import FsmState exposing (FsmType)
 import FsmStateEncoder exposing (encodeState)
 import Json.Encode exposing (Value, encode, int, list, object, string)
 import ParsedToken exposing (ParsedToken)
