@@ -322,8 +322,8 @@ walk string model queue loopDetectionDict parentState =
                     previousString =
                         Dict.get (toString state) loopDetectionDict
 
-                    _ =
-                        Debug.log (toString state) newStatesQueue
+                    --                    _ =
+                    --                        Debug.log (toString state) newStatesQueue
                 in
                 case previousString of
                     Nothing ->

@@ -8,7 +8,7 @@ import Model exposing (Model)
 import OperatorType exposing (OperatorType(..))
 import Regex
 import Token exposing (Token)
-import TokenState exposing (TokenState(AndTerm, CloseParenthesisTerm, EitherOrTerm, EitherTerm, EndQuoteTerm, InTerm, IsTerm, KeywordTerm, NeitherTerm, NorTerm, NotTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, WordTerm))
+import TokenState exposing (TokenState(AndTerm, CloseParenthesisTerm, CommaTerm, EitherOrTerm, EitherTerm, EndQuoteTerm, InTerm, IsTerm, KeywordTerm, NeitherTerm, NorTerm, NotTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, WordTerm))
 
 
 getNextStates : LexerState -> List LexerState
@@ -37,29 +37,15 @@ parseCommaSeparatedValues : List Token -> Model -> List Token
 parseCommaSeparatedValues tokens model =
     case tokens of
         [] ->
-            -- SYNTAX ERROR
             []
 
         currentToken :: rest ->
             case currentToken.state of
-                SpaceTerm ->
-                    [ currentToken ] ++ parseCommaSeparatedValues rest model
-
-                OpenParenthesisTerm ->
-                    [ currentToken ] ++ parseCommaSeparatedValues rest model
-
-                WordTerm ->
-                    [ currentToken ] ++ parseCommaSeparatedValues rest model
-
-                StartQuoteTerm ->
-                    [ currentToken ] ++ parseCommaSeparatedValues rest model
-
                 CloseParenthesisTerm ->
                     [ currentToken ]
 
                 _ ->
-                    -- SYNTAX ERROR
-                    []
+                    [ currentToken ] ++ parseCommaSeparatedValues rest model
 
 
 parseMultiQuotedWord : List Token -> Model -> List Token
@@ -185,44 +171,40 @@ parseValueForEitherOrNeitherOperator tokens model resultString =
 
 parseMultiValue : List Token -> Model -> ( List Token, Maybe Lexeme )
 parseMultiValue tokens model =
-    if List.length tokens == 0 then
-        ( tokens, Just (Lexeme Value "") )
-    else
-        case tokens of
-            [] ->
-                -- syntax error - haven't finished parsing but reached
-                ( tokens, Nothing )
+    case tokens of
+        [] ->
+            ( tokens, Just (Lexeme Value "") )
 
-            nextToken :: restTokens ->
-                case nextToken.state of
-                    SpaceTerm ->
-                        -- skip any spaces
-                        parseMultiValue restTokens model
+        nextToken :: restTokens ->
+            case nextToken.state of
+                SpaceTerm ->
+                    -- skip any spaces
+                    parseMultiValue restTokens model
 
-                    OpenParenthesisTerm ->
-                        let
-                            result : List Token
-                            result =
-                                parseCommaSeparatedValues tokens model
+                OpenParenthesisTerm ->
+                    let
+                        result : List Token
+                        result =
+                            parseCommaSeparatedValues tokens model
 
-                            getString =
-                                \token -> token.parsedToken.string
+                        getString =
+                            \token -> token.parsedToken.string
 
-                            stringResult =
-                                String.join "" (List.map getString result)
+                        stringResult =
+                            String.join "" (List.map getString result)
 
-                            newTokens =
-                                List.drop (List.length result) tokens
-                        in
-                        if List.length newTokens == List.length tokens then
-                            -- syntax error
-                            ( tokens, Nothing )
-                        else
-                            ( newTokens, Just (Lexeme Value stringResult) )
-
-                    _ ->
-                        -- parser cannot recognize input
+                        newTokens =
+                            List.drop (List.length result) tokens
+                    in
+                    if List.length newTokens == List.length tokens then
+                        -- syntax error
                         ( tokens, Nothing )
+                    else
+                        ( newTokens, Just (Lexeme Value stringResult) )
+
+                _ ->
+                    -- parser cannot recognize input
+                    ( tokens, Nothing )
 
 
 parseValue : List Token -> Model -> Maybe Lexeme -> ( List Token, Maybe Lexeme )
@@ -253,7 +235,7 @@ parseValue tokens model previousLexeme =
                             in
                             case lexeme of
                                 Nothing ->
-                                    parseValue tokens model (Just previousLexeme)
+                                    nothing
 
                                 Just result ->
                                     ( newTokens, lexeme )
@@ -263,7 +245,7 @@ parseValue tokens model previousLexeme =
                                     parseMultiValue tokens model
                             in
                             if lexeme == Nothing then
-                                parseValue tokens model (Just previousLexeme)
+                                nothing
                             else
                                 ( newTokens, lexeme )
                         else if operatorType == IsType || operatorType == IsNotType then
@@ -272,7 +254,7 @@ parseValue tokens model previousLexeme =
                                     parseSingleValue tokens model
                             in
                             if lexeme == Nothing then
-                                parseValue tokens model (Just previousLexeme)
+                                nothing
                             else
                                 ( newTokens, lexeme )
                         else
@@ -542,7 +524,7 @@ process tokens model state queue loopDetectionDict previousLexeme =
         CLOSE_PARENTHESIS_TERM ->
             let
                 ( newTokens, lexeme ) =
-                    parseOpenParenthesis tokens model
+                    parseCloseParenthesis tokens model
             in
             case lexeme of
                 Nothing ->
@@ -588,6 +570,9 @@ walk tokens model queue loopDetectionDict previousLexeme =
 
                     currentLength =
                         List.length tokens
+
+                    a =
+                        Debug.log (toString state) newStatesQueue
                 in
                 case previousLength of
                     Nothing ->
