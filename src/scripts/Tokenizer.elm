@@ -45,7 +45,6 @@ type TokenState
     | OpenParenthesisTerm
     | CloseParenthesisTerm
     | CommaTerm
-    | InRepeatValue
 
 
 type alias ParsedToken =
@@ -221,60 +220,6 @@ tokenize string tokenizer model =
         ParsedToken result resultLength
 
 
-return : String -> Model -> TokenState -> (String -> Model -> String) -> List TokenState -> Dict String String -> TokenState -> List Token
-return string model state tokenizer queue newMapping parentState =
-    let
-        result =
-            tokenize string tokenizer model
-
-        newQueue =
-            \n q -> List.drop n q
-    in
-    if result.length == -1 then
-        case state of
-            OpenParenthesisTerm ->
-                let
-                    numberOfStatesToDrop =
-                        if parentState == Criterion then
-                            1
-                        else
-                            2
-                in
-                walk string model (newQueue numberOfStatesToDrop queue) newMapping parentState
-
-            KeywordTerm ->
-                walk string model (UnknownKeywordTerm :: queue) newMapping parentState
-
-            StartQuoteTerm ->
-                walk string model (newQueue 2 queue) newMapping parentState
-
-            EitherTerm ->
-                walk string model (newQueue 6 queue) newMapping parentState
-
-            NeitherTerm ->
-                walk string model (newQueue 6 queue) newMapping parentState
-
-            _ ->
-                walk string model queue newMapping parentState
-    else
-        let
-            newString =
-                String.slice result.length (String.length string) string
-
-            token =
-                [ Token state result ]
-        in
-        case state of
-            OrTerm ->
-                token ++ walk newString model (newQueue 3 queue) newMapping parentState
-
-            AndTerm ->
-                token ++ walk newString model (newQueue 2 queue) newMapping parentState
-
-            _ ->
-                token ++ walk newString model queue newMapping parentState
-
-
 process : String -> Model -> TokenState -> List TokenState -> Dict String String -> TokenState -> List Token
 process string model state queue loopDetectionDict parentState =
     let
@@ -368,8 +313,8 @@ walk string model queue loopDetectionDict parentState =
                     previousString =
                         Dict.get (toString state) loopDetectionDict
 
-                    --                    _ =
-                    --                        Debug.log (toString state) newStatesQueue
+                    a =
+                        Debug.log (toString state) rest
                 in
                 case previousString of
                     Nothing ->
@@ -401,37 +346,117 @@ getPossibleStates state =
             [ OpenParenthesisTerm, SpaceTerm, OperatorGroup, SpaceTerm, CloseParenthesisTerm, SpaceTerm, Conjunction ]
 
         OperatorGroup ->
-            [ KeywordTerm, SpaceTerm, Operator, SpaceTerm, Value ]
+            [ KeywordTerm, SpaceTerm, Operator ]
 
         Operator ->
             [ IsOperator ]
 
         IsOperator ->
-            [ IsTerm, SpaceTerm, IsSubOperator ]
+            [ IsTerm, SpaceTerm, EitherOrOperator, NeitherNorOperator, NotTerm, SpaceTerm, InOperator, SpaceTerm, Value ]
 
-        IsSubOperator ->
-            [ EitherOrOperator, NeitherNorOperator, NotTerm, SpaceTerm, InTerm ]
+        InOperator ->
+            [ InTerm, Statement, OpenParenthesisTerm, InValue, CloseParenthesisTerm ]
+
+        EitherOrOperator ->
+            [ EitherTerm, SpaceTerm, Value, SpaceTerm, EitherOrTerm, SpaceTerm, Value ]
+
+        NeitherNorOperator ->
+            [ NeitherTerm, SpaceTerm, Value, SpaceTerm, NorTerm, SpaceTerm, Value ]
 
         Value ->
-            [ WordTerm, MultiQuotedWord, InValue ]
+            [ WordTerm, MultiQuotedWord ]
 
         InValue ->
-            [ SpaceTerm, OpenParenthesisTerm, InRepeatValue, CloseParenthesisTerm ]
-
-        InRepeatValue ->
-            [ SpaceTerm, CommaTerm, Value, InRepeatValue ]
+            [ SpaceTerm, CommaTerm, SpaceTerm, Value, InValue ]
 
         MultiQuotedWord ->
             [ StartQuoteTerm, Statement, EndQuoteTerm ]
-
-        EitherOrOperator ->
-            [ SpaceTerm, EitherTerm, SpaceTerm, Value, SpaceTerm, EitherOrTerm, SpaceTerm, EitherOrOperator ]
-
-        NeitherNorOperator ->
-            [ SpaceTerm, NeitherTerm, SpaceTerm, Value, SpaceTerm, NorTerm, SpaceTerm, NeitherNorOperator ]
 
         Conjunction ->
             [ SpaceTerm, OrTerm, AndTerm, WordTerm, Conjunction ]
 
         _ ->
             []
+
+
+return : String -> Model -> TokenState -> (String -> Model -> String) -> List TokenState -> Dict String String -> TokenState -> List Token
+return string model state tokenizer queue newMapping parentState =
+    let
+        result =
+            tokenize string tokenizer model
+
+        newQueue =
+            \n q -> List.drop n q
+
+        dropAhead n q =
+            let
+                possibleStates =
+                    List.drop 1 (getPossibleStates parentState)
+
+                numberOfItemsToDrop =
+                    List.length possibleStates + n
+            in
+            possibleStates ++ List.drop numberOfItemsToDrop q
+    in
+    if result.length == -1 then
+        case state of
+            OpenParenthesisTerm ->
+                let
+                    numberOfStatesToDrop =
+                        if parentState == Criterion then
+                            1
+                        else
+                            2
+                in
+                walk string model (newQueue numberOfStatesToDrop queue) newMapping parentState
+
+            KeywordTerm ->
+                walk string model (UnknownKeywordTerm :: queue) newMapping parentState
+
+            StartQuoteTerm ->
+                walk string model (newQueue 2 queue) newMapping parentState
+
+            EitherTerm ->
+                walk string model (newQueue 6 queue) newMapping parentState
+
+            NeitherTerm ->
+                walk string model (newQueue 6 queue) newMapping parentState
+
+            IsTerm ->
+                walk string model (newQueue 8 queue) newMapping parentState
+
+            InTerm ->
+                walk string model (newQueue 4 queue) newMapping parentState
+
+            _ ->
+                walk string model queue newMapping parentState
+    else
+        let
+            newString =
+                String.slice result.length (String.length string) string
+
+            token =
+                [ Token state result ]
+        in
+        case state of
+            OrTerm ->
+                token ++ walk newString model (newQueue 3 queue) newMapping parentState
+
+            AndTerm ->
+                token ++ walk newString model (newQueue 2 queue) newMapping parentState
+
+            CloseParenthesisTerm ->
+                -- remove IsOperator after is in() closing bracket
+                token ++ walk newString model (newQueue 1 queue) newMapping parentState
+
+            EitherTerm ->
+                token ++ walk newString model (dropAhead 6 queue) newMapping parentState
+
+            NeitherTerm ->
+                token ++ walk newString model (dropAhead 5 queue) newMapping parentState
+
+            InTerm ->
+                token ++ walk newString model (dropAhead 2 queue) newMapping parentState
+
+            _ ->
+                token ++ walk newString model queue newMapping parentState

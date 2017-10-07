@@ -14,7 +14,8 @@
         "./tokenizer/is/not/in",
         "./tokenizer/is/in",
         "./tokenizer/is/either",
-        "./tokenizer/is/neither"
+        "./tokenizer/is/neither",
+        "./lexer"
     ],
     "exposed-modules": [],
     "native-modules": true,

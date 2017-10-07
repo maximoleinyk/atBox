@@ -1,4 +1,4 @@
-module Lexer exposing (Lexeme, LexemeType, LexerState, run)
+module Lexer exposing (Lexeme, LexemeType(..), LexerState, run)
 
 import Dict exposing (Dict)
 import Model exposing (Model)
@@ -596,8 +596,8 @@ walk tokens model queue loopDetectionDict previousLexeme =
                     currentLength =
                         List.length tokens
 
-                    a =
-                        Debug.log (toString state) newStatesQueue
+                    --                    a =
+                    --                        Debug.log (toString state) newStatesQueue
                 in
                 case previousLength of
                     Nothing ->

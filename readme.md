@@ -170,19 +170,6 @@ output = [
 ```
 
 ### Case 1.3.2:
-input = `@forename is either Maksym or Viktor or Julia`    
-```
-output = [
-    {
-        forename: {
-            operator: "in",
-            value: ["Maksym", "Viktor", "Julia"]
-        }
-    }
-]     
-```
-
-### Case 1.3.3:
 input = `@forename is neither Maksym nor Viktor`    
 ```
 output = [
@@ -190,19 +177,6 @@ output = [
         forename: {
             operator: "not in",
             value: ["Maksym", "Viktor"]
-        }
-    }
-]     
-```
-
-### Case 1.3.4:
-input = `@forename is neither Maksym nor Viktor nor Julia`    
-```
-output = [
-    {
-        forename: {
-            operator: "not in",
-            value: ["Maksym", "Viktor", "Julia"]
         }
     }
 ]     

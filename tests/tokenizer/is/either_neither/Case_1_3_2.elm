@@ -10,7 +10,7 @@ suite : Test
 suite =
     let
         testCase =
-            "@forename is either Maksym or Viktor or Julia"
+            "@forename is neither Maksym nor Viktor"
     in
     describe "Tokenizer.run"
         [ describe "is"
@@ -41,10 +41,10 @@ suite =
                                 , length = 1
                                 }
                           }
-                        , { state = EitherTerm
+                        , { state = NeitherTerm
                           , parsedToken =
-                                { string = "either"
-                                , length = 6
+                                { string = "neither"
+                                , length = 7
                                 }
                           }
                         , { state = SpaceTerm
@@ -65,10 +65,10 @@ suite =
                                 , length = 1
                                 }
                           }
-                        , { state = OrTerm
+                        , { state = NorTerm
                           , parsedToken =
-                                { string = "or"
-                                , length = 2
+                                { string = "nor"
+                                , length = 3
                                 }
                           }
                         , { state = SpaceTerm
@@ -81,30 +81,6 @@ suite =
                           , parsedToken =
                                 { string = "Viktor"
                                 , length = 6
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = OrTerm
-                          , parsedToken =
-                                { string = "or"
-                                , length = 2
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "Julia"
-                                , length = 5
                                 }
                           }
                         ]
