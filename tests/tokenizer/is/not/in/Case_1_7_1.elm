@@ -3,8 +3,7 @@ module Case_1_7_1 exposing (..)
 import Expect
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import TokenState exposing (TokenState(..))
-import Tokenizer
+import Tokenizer exposing (TokenState(..))
 
 
 suite : Test
