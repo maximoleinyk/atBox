@@ -6,7 +6,7 @@ import Encoders exposing (encodeLexemes, encodeTokens)
 import Json.Encode exposing (object, string)
 import Lexer exposing (Lexeme)
 import Model exposing (Model)
-import Ports exposing (inputChangeEvent, keyDownEvent)
+import Ports exposing (..)
 import Tokenizer exposing (Token)
 
 
@@ -30,7 +30,10 @@ update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
         GetCaretPosition ->
-            ( model, keyDownEvent "" )
+            ( model, getCursorPosition "" )
+
+        UpdateCaretIndex newCursorIndex ->
+            ( { model | cursorIndex = newCursorIndex }, Cmd.none )
 
         Parse newValue ->
             let
@@ -55,7 +58,7 @@ update msg model =
                 | value = newValue
                 , cursorPosition = contextAtCursorPosition
               }
-            , inputChangeEvent result
+            , emitData result
             )
 
         _ ->

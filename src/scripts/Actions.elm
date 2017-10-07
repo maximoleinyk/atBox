@@ -8,3 +8,6 @@ type Msg
     | ArrowDownPressed
     | TabKeyPressed
     | GetCaretPosition
+    | UpdateCaretIndex Int
+    | ArrowLeftPressed
+    | ArrowRightPressed

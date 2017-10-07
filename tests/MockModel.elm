@@ -31,3 +31,4 @@ getDefaultModel =
         ""
         ""
         "@"
+        0

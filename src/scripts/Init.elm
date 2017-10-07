@@ -6,14 +6,14 @@ import Json.Decode exposing (decodeValue, list)
 import Maybe exposing (withDefault)
 import Model exposing (..)
 import Operator exposing (Operator)
-import Ports exposing (inputChangeEvent)
+import Ports exposing (emitData)
 import QueryField exposing (QueryField)
 import QueryType exposing (QueryType, queryTypeDecoder)
 
 
 init : Config -> ( Model, Cmd msg )
 init flags =
-    ( getInitialModel flags, inputChangeEvent "{ \"tokens\":[], \"lexemes\":[] }" )
+    ( getInitialModel flags, emitData "{ \"tokens\":[], \"lexemes\":[] }" )
 
 
 getInitialModel : Config -> Model
@@ -37,3 +37,4 @@ getInitialModel flags =
         ""
         ""
         "@"
+        0

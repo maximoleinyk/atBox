@@ -32,8 +32,14 @@ onKeyHandle model =
                 9 ->
                     succeed TabKeyPressed
 
+                37 ->
+                    succeed ArrowLeftPressed
+
                 38 ->
                     succeed ArrowUpPressed
+
+                39 ->
+                    succeed ArrowRightPressed
 
                 40 ->
                     if model.cursorPosition /= NoContext then
@@ -64,12 +70,12 @@ view model =
                 []
             ]
         , div [ class "at-box-list" ]
-            [ getSuggestions model ]
+            [ getDropdownSuggestList model ]
         ]
 
 
-getSuggestions : Model -> Html Msg
-getSuggestions model =
+getDropdownSuggestList : Model -> Html Msg
+getDropdownSuggestList model =
     let
         matchPatternFilter =
             List.filter (\op -> contains (toLower model.currentToken) (toLower op.label))
@@ -79,7 +85,7 @@ getSuggestions model =
             text ""
 
         -- Ex: find a person whose @____
-        AfterAtSymbol ->
+        KeywordContext ->
             ul []
                 (model.queryFields
                     |> matchPatternFilter
@@ -87,23 +93,9 @@ getSuggestions model =
                 )
 
         -- Ex: find a person whose @name ____
-        AfterAtField ->
+        OperatorContext ->
             ul []
                 (model.operators
-                    -- exclude OR & AND operators
-                    |> List.filter (\op -> not op.conjunction)
-                    -- match result
-                    |> matchPatternFilter
-                    -- produce HTML
-                    |> List.map operatorLi
-                )
-
-        -- Ex: find a person whose @name is Max ____
-        AfterOperatorAndValue ->
-            ul []
-                (model.operators
-                    -- exclude everything except OR & AND operators
-                    |> List.filter (\op -> op.conjunction)
                     -- match result
                     |> matchPatternFilter
                     -- produce HTML

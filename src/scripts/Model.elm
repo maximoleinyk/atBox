@@ -16,4 +16,5 @@ type alias Model =
     , currentToken : String
     , selectedItem : String
     , keywordDelimiter : String
+    , cursorIndex : Int
     }

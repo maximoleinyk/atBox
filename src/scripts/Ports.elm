@@ -1,10 +1,10 @@
 port module Ports exposing (..)
 
 
-port inputChangeEvent : String -> Cmd msg
+port emitData : String -> Cmd msg
 
 
-port keyDownEvent : String -> Cmd msg
+port getCursorPosition : String -> Cmd msg
 
 
-port caretPosition : (Int -> msg) -> Sub msg
+port setCursorPosition : (Int -> msg) -> Sub msg

@@ -49,10 +49,11 @@
   }
   
   function getCaretPosition(elm) {
-    if (typeof elm.selectionStart != "undefined")
+    if (typeof elm.selectionStart !== "undefined") {
       return elm.selectionStart;
-    else if (document.selection)
-      return
+    } else if (document.selection) {
+      return;
+    }
     Math.abs(document.selection.createRange().moveStart("character", -1000000));
   }
   
@@ -124,13 +125,14 @@
         placeholder: 'Click here and start typing'
       }, config || {}));
   
-      component.ports.keyDownEvent.subscribe(function() {
+      component.ports.getCursorPosition.subscribe(function() {
         const input = document.querySelector(config.root + ' input');
         const caretPosition = getCaretPosition(input);
-        component.ports.caretPosition.send(caretPosition);
+        console.log(caretPosition);
+        component.ports.setCursorPosition.send(caretPosition);
       });
       
-      component.ports.inputChangeEvent.subscribe(function(output) {
+      component.ports.emitData.subscribe(function(output) {
         onChange(JSON.parse(output));
       });
     });
