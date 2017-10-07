@@ -45,9 +45,9 @@ update msg model =
                 a =
                     Debug.log (toString tokens) ""
 
-                b =
-                    Debug.log (toString tokens) ""
-
+                --
+                --                b =
+                --                    Debug.log (toString tokens) ""
                 result =
                     encodeFsmResponse (FsmResponse tokens lexemes)
             in

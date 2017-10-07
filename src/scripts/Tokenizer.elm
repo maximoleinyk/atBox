@@ -214,8 +214,19 @@ return string model state tokenizer queue newMapping parentState =
         let
             newString =
                 String.slice result.length (String.length string) string
+
+            token =
+                [ Token state result ]
         in
-        [ Token state result ] ++ walk newString model queue newMapping parentState
+        case state of
+            OrTerm ->
+                token ++ walk newString model (newQueue 3 queue) newMapping parentState
+
+            AndTerm ->
+                token ++ walk newString model (newQueue 2 queue) newMapping parentState
+
+            _ ->
+                token ++ walk newString model queue newMapping parentState
 
 
 process : String -> Model -> TokenState -> List TokenState -> Dict String String -> TokenState -> List Token
@@ -260,6 +271,9 @@ process string model state queue loopDetectionDict parentState =
             return string model state and queue newMapping parentState
 
         OrTerm ->
+            return string model state or queue newMapping parentState
+
+        EitherOrTerm ->
             return string model state or queue newMapping parentState
 
         NorTerm ->
@@ -307,6 +321,9 @@ walk string model queue loopDetectionDict parentState =
                     -- get previous state of the entry when we were in this state
                     previousString =
                         Dict.get (toString state) loopDetectionDict
+
+                    _ =
+                        Debug.log (toString state) newStatesQueue
                 in
                 case previousString of
                     Nothing ->
@@ -362,19 +379,13 @@ getPossibleStates state =
             [ StartQuoteTerm, Statement, EndQuoteTerm ]
 
         EitherOrOperator ->
-            [ SpaceTerm, EitherTerm, SpaceTerm, Value, SpaceTerm, OrTerm, SpaceTerm, EitherOrOperator ]
+            [ SpaceTerm, EitherTerm, SpaceTerm, Value, SpaceTerm, EitherOrTerm, SpaceTerm, EitherOrOperator ]
 
         NeitherNorOperator ->
             [ SpaceTerm, NeitherTerm, SpaceTerm, Value, SpaceTerm, NorTerm, SpaceTerm, NeitherNorOperator ]
 
         Conjunction ->
-            [ OperatorGroupOr, OperatorGroupAnd ]
-
-        OperatorGroupOr ->
-            [ SpaceTerm, OrTerm ]
-
-        OperatorGroupAnd ->
-            [ SpaceTerm, AndTerm ]
+            [ SpaceTerm, OrTerm, AndTerm, WordTerm, Conjunction ]
 
         _ ->
             []

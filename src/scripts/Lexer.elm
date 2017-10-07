@@ -8,26 +8,7 @@ import Model exposing (Model)
 import OperatorType exposing (OperatorType(..))
 import Regex
 import Token exposing (Token)
-import TokenState
-    exposing
-        ( TokenState
-            ( AndTerm
-            , CloseParenthesisTerm
-            , EitherTerm
-            , EndQuoteTerm
-            , InTerm
-            , IsTerm
-            , KeywordTerm
-            , NeitherTerm
-            , NorTerm
-            , NotTerm
-            , OpenParenthesisTerm
-            , OrTerm
-            , SpaceTerm
-            , StartQuoteTerm
-            , WordTerm
-            )
-        )
+import TokenState exposing (TokenState(AndTerm, CloseParenthesisTerm, EitherOrTerm, EitherTerm, EndQuoteTerm, InTerm, IsTerm, KeywordTerm, NeitherTerm, NorTerm, NotTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, WordTerm))
 
 
 getNextStates : LexerState -> List LexerState
@@ -192,7 +173,7 @@ parseValueForEitherOrNeitherOperator tokens model resultString =
                         Just result ->
                             parseValueForEitherOrNeitherOperator newTokens model (resultString ++ result.value)
 
-                OrTerm ->
+                EitherOrTerm ->
                     parseValueForEitherOrNeitherOperator rest model (resultString ++ first.parsedToken.string)
 
                 NorTerm ->

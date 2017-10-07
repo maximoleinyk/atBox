@@ -54,7 +54,7 @@ suite =
                                 , length = 1
                                 }
                           }
-                        , { state = WordTerm
+                        , { state = OrTerm
                           , parsedToken =
                                 { string = "or"
                                 , length = 2

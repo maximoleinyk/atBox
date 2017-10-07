@@ -16,8 +16,7 @@ type TokenState
     | Conjunction
     | Operator
     | OperatorGroup
-    | OperatorGroupOr
-    | OperatorGroupAnd
+    | EitherOrTerm
     | AndTerm
     | OrTerm
     | NorTerm
