@@ -22,84 +22,72 @@ suite =
                           , parsedToken =
                                 { string = "@forename"
                                 , length = 9
-                                , remainingString = " is in (Maksym, Viktor)"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "is in (Maksym, Viktor)"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " in (Maksym, Viktor)"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "in (Maksym, Viktor)"
                                 }
                           }
                         , { state = InTerm
                           , parsedToken =
                                 { string = "in"
                                 , length = 2
-                                , remainingString = " (Maksym, Viktor)"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "(Maksym, Viktor)"
                                 }
                           }
                         , { state = OpenParenthesisTerm
                           , parsedToken =
                                 { string = "("
                                 , length = 1
-                                , remainingString = "Maksym, Viktor)"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Maksym"
                                 , length = 6
-                                , remainingString = ", Viktor)"
                                 }
                           }
                         , { state = CommaTerm
                           , parsedToken =
                                 { string = ","
                                 , length = 1
-                                , remainingString = " Viktor)"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Viktor)"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Viktor"
                                 , length = 6
-                                , remainingString = ")"
                                 }
                           }
                         , { state = CloseParenthesisTerm
                           , parsedToken =
                                 { string = ")"
                                 , length = 1
-                                , remainingString = ""
                                 }
                           }
                         ]

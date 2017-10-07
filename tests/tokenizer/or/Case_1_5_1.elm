@@ -22,77 +22,66 @@ suite =
                           , parsedToken =
                                 { string = "@forename"
                                 , length = 9
-                                , remainingString = " is Maksym or @surname Oliinyk"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "is Maksym or @surname Oliinyk"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " Maksym or @surname Oliinyk"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Maksym or @surname Oliinyk"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Maksym"
                                 , length = 6
-                                , remainingString = " or @surname Oliinyk"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "or @surname Oliinyk"
                                 }
                           }
                         , { state = OrTerm
                           , parsedToken =
                                 { string = "or"
                                 , length = 2
-                                , remainingString = " @surname Oliinyk"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "@surname Oliinyk"
                                 }
                           }
                         , { state = KeywordTerm
                           , parsedToken =
                                 { string = "@surname"
                                 , length = 8
-                                , remainingString = " Oliinyk"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Oliinyk"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Oliinyk"
                                 , length = 7
-                                , remainingString = ""
                                 }
                           }
                         ]

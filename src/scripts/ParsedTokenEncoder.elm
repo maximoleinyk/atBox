@@ -9,5 +9,4 @@ encodeParsedToken parsedToken =
     object
         [ ( "string", string parsedToken.string )
         , ( "length", int parsedToken.length )
-        , ( "remainingString", string parsedToken.remainingString )
         ]

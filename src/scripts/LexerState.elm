@@ -11,3 +11,5 @@ type LexerState
     | FIELD_TERM
     | OPERATOR_TERM
     | VALUE_TERM
+    | OPEN_PARENTHESIS
+    | CLOSE_PARENTHESIS

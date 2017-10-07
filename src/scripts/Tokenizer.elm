@@ -166,16 +166,13 @@ tokenize string tokenizer model =
         result =
             tokenizer string model
 
-        length =
+        resultLength =
             String.length result
-
-        remainingString =
-            String.slice length (String.length string) string
     in
-    if length == 0 then
-        ParsedToken "" -1 ""
+    if resultLength == 0 then
+        ParsedToken "" -1
     else
-        ParsedToken result length remainingString
+        ParsedToken result resultLength
 
 
 return : String -> Model -> TokenState -> (String -> Model -> String) -> List TokenState -> Dict String String -> TokenState -> List Token
@@ -214,7 +211,11 @@ return string model state tokenizer queue newMapping parentState =
             _ ->
                 walk string model queue newMapping parentState
     else
-        [ Token state result ] ++ walk result.remainingString model queue newMapping parentState
+        let
+            newString =
+                String.slice result.length (String.length string) string
+        in
+        [ Token state result ] ++ walk newString model queue newMapping parentState
 
 
 process : String -> Model -> TokenState -> List TokenState -> Dict String String -> TokenState -> List Token
@@ -306,9 +307,6 @@ walk string model queue loopDetectionDict parentState =
                     -- get previous state of the entry when we were in this state
                     previousString =
                         Dict.get (toString state) loopDetectionDict
-
-                    --                    _ =
-                    --                        Debug.log (toString state) newStatesQueue
                 in
                 case previousString of
                     Nothing ->

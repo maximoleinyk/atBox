@@ -22,35 +22,30 @@ suite =
                           , parsedToken =
                                 { string = "@@@name"
                                 , length = 7
-                                , remainingString = " is Max"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "is Max"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " Max"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Max"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Max"
                                 , length = 3
-                                , remainingString = ""
                                 }
                           }
                         ]

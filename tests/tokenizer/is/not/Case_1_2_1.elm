@@ -22,49 +22,42 @@ suite =
                           , parsedToken =
                                 { string = "@name"
                                 , length = 5
-                                , remainingString = " is not Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "is not Maksym"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " not Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "not Maksym"
                                 }
                           }
                         , { state = NotTerm
                           , parsedToken =
                                 { string = "not"
                                 , length = 3
-                                , remainingString = " Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Maksym"
                                 , length = 6
-                                , remainingString = ""
                                 }
                           }
                         ]

@@ -22,35 +22,30 @@ suite =
                           , parsedToken =
                                 { string = "@forename"
                                 , length = 9
-                                , remainingString = " is in"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "is in"
                                 }
                           }
                         , { state = IsTerm
                           , parsedToken =
                                 { string = "is"
                                 , length = 2
-                                , remainingString = " in"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "in"
                                 }
                           }
                         , { state = InTerm
                           , parsedToken =
                                 { string = "in"
                                 , length = 2
-                                , remainingString = ""
                                 }
                           }
                         ]

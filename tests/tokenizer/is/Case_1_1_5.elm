@@ -22,77 +22,66 @@ suite =
                           , parsedToken =
                                 { string = "find"
                                 , length = 4
-                                , remainingString = " a person whose name Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "a person whose name Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "a"
                                 , length = 1
-                                , remainingString = " person whose name Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "person whose name Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "person"
                                 , length = 6
-                                , remainingString = " whose name Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "whose name Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "whose"
                                 , length = 5
-                                , remainingString = " name Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "name Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "name"
                                 , length = 4
-                                , remainingString = " Maksym"
                                 }
                           }
                         , { state = SpaceTerm
                           , parsedToken =
                                 { string = " "
                                 , length = 1
-                                , remainingString = "Maksym"
                                 }
                           }
                         , { state = WordTerm
                           , parsedToken =
                                 { string = "Maksym"
                                 , length = 6
-                                , remainingString = ""
                                 }
                           }
                         ]

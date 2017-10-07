@@ -42,6 +42,12 @@ update msg model =
                 lexemes =
                     Lexer.evaluate tokens model
 
+                a =
+                    Debug.log (toString tokens) ""
+
+                b =
+                    Debug.log (toString tokens) ""
+
                 result =
                     encodeFsmResponse (FsmResponse tokens lexemes)
             in
