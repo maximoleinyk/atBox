@@ -33,7 +33,6 @@ type TokenState
     | NotTerm
     | IsTerm
     | IsOperator
-    | IsSubOperator
     | EitherTerm
     | EitherOrOperator
     | NeitherTerm
@@ -166,9 +165,12 @@ unknownKeyword : String -> Model -> String
 unknownKeyword string model =
     let
         pattern =
-            Regex.caseInsensitive (Regex.regex ("^(" ++ model.keywordDelimiter ++ "\\S*)"))
+            "^(" ++ model.keywordDelimiter ++ "\\S*)"
+
+        regexp =
+            Regex.caseInsensitive (Regex.regex pattern)
     in
-    regexTokenizer string pattern
+    regexTokenizer string regexp
 
 
 word : String -> Model -> String
@@ -182,7 +184,7 @@ word string model =
                 _ ->
                     let
                         result =
-                            regexTokenizer first (Regex.regex "([^ @\",())])")
+                            regexTokenizer first (Regex.regex ("([^ " ++ model.keywordDelimiter ++ "\",())])"))
                     in
                     if result == "" then
                         ""
@@ -313,8 +315,8 @@ walk string model queue loopDetectionDict parentState =
                     previousString =
                         Dict.get (toString state) loopDetectionDict
 
-                    a =
-                        Debug.log (toString state) rest
+                    --                    a =
+                    --                        Debug.log (toString state) rest
                 in
                 case previousString of
                     Nothing ->
@@ -387,16 +389,6 @@ return string model state tokenizer queue newMapping parentState =
 
         newQueue =
             \n q -> List.drop n q
-
-        dropAhead n q =
-            let
-                possibleStates =
-                    List.drop 1 (getPossibleStates parentState)
-
-                numberOfItemsToDrop =
-                    List.length possibleStates + n
-            in
-            possibleStates ++ List.drop numberOfItemsToDrop q
     in
     if result.length == -1 then
         case state of
@@ -437,6 +429,16 @@ return string model state tokenizer queue newMapping parentState =
 
             token =
                 [ Token state result ]
+
+            dropAhead n q =
+                let
+                    possibleStates =
+                        List.drop 1 (getPossibleStates parentState)
+
+                    numberOfItemsToDrop =
+                        List.length possibleStates + n
+                in
+                possibleStates ++ List.drop numberOfItemsToDrop q
         in
         case state of
             OrTerm ->
