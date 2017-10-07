@@ -1,7 +1,7 @@
-module Init exposing (..)
+module Init exposing (getInitialModel, init)
 
 import Config exposing (..)
-import CursorPosition exposing (CursorPosition(..))
+import CursorPosition exposing (CursorPosition(NoContext))
 import Json.Decode exposing (decodeValue, list)
 import Maybe exposing (withDefault)
 import Model exposing (..)

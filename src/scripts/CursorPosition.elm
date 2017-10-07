@@ -1,4 +1,4 @@
-module CursorPosition exposing (..)
+module CursorPosition exposing (CursorPosition(..))
 
 
 type CursorPosition

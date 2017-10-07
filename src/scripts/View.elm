@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Actions exposing (..)
-import CursorPosition exposing (CursorPosition(AfterAtField, AfterAtSymbol, AfterOperatorAndValue, NoContext))
+import CursorPosition exposing (CursorPosition(..))
 import Html exposing (Attribute, Html, div, input, label, li, text)
 import Html.Attributes exposing (class, for, id, placeholder, type_, value)
 import Html.Events exposing (keyCode, on, onFocus, onInput, onWithOptions, targetValue)

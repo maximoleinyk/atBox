@@ -1,4 +1,4 @@
-module QueryType exposing (..)
+module QueryType exposing (QueryType, queryTypeDecoder)
 
 import Json.Decode exposing (Decoder, succeed)
 

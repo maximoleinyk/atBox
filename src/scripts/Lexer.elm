@@ -1,14 +1,39 @@
-module Lexer exposing (evaluate)
+module Lexer exposing (Lexeme, LexemeType, LexerState, run)
 
 import Dict exposing (Dict)
-import Lexeme exposing (Lexeme)
-import LexemeType exposing (LexemeType(..))
-import LexerState exposing (LexerState(..))
 import Model exposing (Model)
 import OperatorType exposing (OperatorType(..))
 import Regex
-import Token exposing (Token)
-import TokenState exposing (TokenState(AndTerm, CloseParenthesisTerm, CommaTerm, EitherOrTerm, EitherTerm, EndQuoteTerm, InTerm, IsTerm, KeywordTerm, NeitherTerm, NorTerm, NotTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, WordTerm))
+import Tokenizer exposing (Token, TokenState(..))
+
+
+type LexerState
+    = START
+    | JOIN_TERM
+    | EXPRESSION
+    | OPEN_PARENTHESIS_TERM
+    | CLOSE_PARENTHESIS_TERM
+    | OPERATOR_GROUP
+    | FIELD_TERM
+    | OPERATOR_TERM
+    | VALUE_TERM
+    | OPEN_PARENTHESIS
+    | CLOSE_PARENTHESIS
+
+
+type LexemeType
+    = Field
+    | Operator OperatorType
+    | Value
+    | Joiner
+    | LeftParenthesis
+    | RightParenthesis
+
+
+type alias Lexeme =
+    { lexemeType : LexemeType
+    , value : String
+    }
 
 
 getNextStates : LexerState -> List LexerState
@@ -588,8 +613,8 @@ walk tokens model queue loopDetectionDict previousLexeme =
                             process tokens model state newStatesQueue loopDetectionDict previousLexeme
 
 
-evaluate : List Token -> Model -> List Lexeme
-evaluate tokens model =
+run : List Token -> Model -> List Lexeme
+run tokens model =
     let
         initialState =
             START

@@ -1,4 +1,4 @@
-module Operator exposing (..)
+module Operator exposing (Operator)
 
 
 type alias Operator =

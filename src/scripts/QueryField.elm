@@ -1,4 +1,4 @@
-module QueryField exposing (..)
+module QueryField exposing (QueryField)
 
 
 type alias QueryField =

@@ -1,11 +1,57 @@
-module Tokenizer exposing (run)
+module Tokenizer exposing (ParsedToken, Token, TokenState(..), run)
 
 import Dict exposing (Dict)
 import Model exposing (Model)
-import ParsedToken exposing (ParsedToken)
 import Regex exposing (HowMany(All), Regex)
-import Token exposing (Token)
-import TokenState exposing (TokenState(..))
+
+
+type alias Token =
+    { state : TokenState
+    , parsedToken : ParsedToken
+    }
+
+
+type TokenState
+    = Start
+    | Statement
+    | SpaceTerm
+    | WordTerm
+    | KeywordTerm
+    | Value
+    | MultiQuotedWord
+    | StartQuoteTerm
+    | EndQuoteTerm
+    | Criteria
+    | Criterion
+    | Conjunction
+    | Operator
+    | OperatorGroup
+    | EitherOrTerm
+    | AndTerm
+    | OrTerm
+    | NorTerm
+    | NotTerm
+    | IsTerm
+    | IsOperator
+    | IsSubOperator
+    | EitherTerm
+    | EitherOrOperator
+    | NeitherTerm
+    | NeitherNorOperator
+    | UnknownKeywordTerm
+    | InTerm
+    | InOperator
+    | InValue
+    | OpenParenthesisTerm
+    | CloseParenthesisTerm
+    | CommaTerm
+    | InRepeatValue
+
+
+type alias ParsedToken =
+    { string : String
+    , length : Int
+    }
 
 
 run : String -> Model -> List Token
