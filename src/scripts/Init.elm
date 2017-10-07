@@ -13,7 +13,7 @@ import QueryType exposing (QueryType, queryTypeDecoder)
 
 init : Config -> ( Model, Cmd msg )
 init flags =
-    ( getInitialModel flags, inputChangeEvent "[]" )
+    ( getInitialModel flags, inputChangeEvent "{ \"tokens\":[], \"lexemes\":[] }" )
 
 
 getInitialModel : Config -> Model

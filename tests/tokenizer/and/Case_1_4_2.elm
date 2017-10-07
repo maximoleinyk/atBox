@@ -1,9 +1,9 @@
 module Case_1_4_2 exposing (..)
 
 import Expect
-import FsmState exposing (FsmType(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
+import TokenState exposing (TokenState(..))
 import Tokenizer
 
 

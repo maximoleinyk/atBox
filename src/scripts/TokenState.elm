@@ -1,7 +1,7 @@
-module FsmState exposing (..)
+module TokenState exposing (..)
 
 
-type FsmType
+type TokenState
     = Start
     | Statement
     | SpaceTerm

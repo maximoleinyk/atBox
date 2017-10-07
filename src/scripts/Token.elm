@@ -1,10 +1,10 @@
 module Token exposing (..)
 
-import FsmState exposing (FsmType)
 import ParsedToken exposing (ParsedToken)
+import TokenState exposing (TokenState)
 
 
 type alias Token =
-    { state : FsmType
+    { state : TokenState
     , parsedToken : ParsedToken
     }

@@ -1,15 +1,15 @@
-module TokenEncoder exposing (..)
+module TokenEncoder exposing (encode)
 
-import FsmState exposing (FsmType)
-import FsmStateEncoder exposing (encodeState)
 import Json.Encode exposing (Value, encode, int, list, object, string)
 import ParsedToken exposing (ParsedToken)
 import ParsedTokenEncoder exposing (encodeParsedToken)
 import Token exposing (Token)
+import TokenState exposing (TokenState)
+import TokenStateEncoder exposing (encodeState)
 
 
-encodeTokens : List Token -> String
-encodeTokens tokens =
+encode : List Token -> Json.Encode.Value
+encode tokens =
     let
         f =
             \t ->
@@ -18,4 +18,4 @@ encodeTokens tokens =
                     , ( "parsedToken", encodeParsedToken t.parsedToken )
                     ]
     in
-    encode 2 (list (List.map f tokens))
+    list (List.map f tokens)

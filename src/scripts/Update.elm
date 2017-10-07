@@ -1,11 +1,31 @@
 module Update exposing (..)
 
 import Actions exposing (Msg(..))
+import Json.Encode exposing (object, string)
+import Lexeme exposing (Lexeme)
+import LexemeEncoder
 import Lexer
 import Model exposing (Model)
 import Ports exposing (inputChangeEvent, keyDownEvent)
+import Token exposing (Token)
 import TokenEncoder
 import Tokenizer
+
+
+type alias FsmResponse =
+    { tokens : List Token
+    , lexemes : List Lexeme
+    }
+
+
+encodeFsmResponse : FsmResponse -> String
+encodeFsmResponse response =
+    Json.Encode.encode 2
+        (object
+            [ ( "tokens", TokenEncoder.encode response.tokens )
+            , ( "lexemes", LexemeEncoder.encode response.lexemes )
+            ]
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -23,18 +43,9 @@ update msg model =
                     Lexer.evaluate tokens model
 
                 result =
-                    TokenEncoder.encodeTokens (Debug.log "tokens" tokens)
+                    encodeFsmResponse (FsmResponse tokens lexemes)
             in
             ( { model | value = newValue }, inputChangeEvent result )
 
-        EnterKeyPressed ->
-            Debug.log "EnterKeyPressed" (model ! [])
-
-        ArrowUpPressed ->
-            Debug.log "ArrowUpPressed" (model ! [])
-
-        ArrowDownPressed ->
-            Debug.log "Update:ArrowDownPressed" ( model, Cmd.none )
-
-        TabKeyPressed ->
-            Debug.log "TabKeyPressed " (model ! [])
+        _ ->
+            ( model, Cmd.none )

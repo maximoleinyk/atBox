@@ -1,11 +1,11 @@
 module Tokenizer exposing (run)
 
 import Dict exposing (Dict)
-import FsmState exposing (FsmType(..))
 import Model exposing (Model)
 import ParsedToken exposing (ParsedToken)
 import Regex exposing (HowMany(All), Regex)
 import Token exposing (Token)
+import TokenState exposing (TokenState(..))
 
 
 run : String -> Model -> List Token
@@ -17,7 +17,7 @@ run string model =
         loopDetection =
             Dict.empty
     in
-    walk string model [ initialState ] loopDetection Start
+    walk string model [ initialState ] loopDetection initialState
 
 
 regexTokenizer : String -> Regex -> String
@@ -178,7 +178,7 @@ tokenize string tokenizer model =
         ParsedToken result length remainingString
 
 
-return : String -> Model -> FsmType -> (String -> Model -> String) -> List FsmType -> Dict String String -> FsmType -> List Token
+return : String -> Model -> TokenState -> (String -> Model -> String) -> List TokenState -> Dict String String -> TokenState -> List Token
 return string model state tokenizer queue newMapping parentState =
     let
         result =
@@ -217,7 +217,7 @@ return string model state tokenizer queue newMapping parentState =
         [ Token state result ] ++ walk result.remainingString model queue newMapping parentState
 
 
-process : String -> Model -> FsmType -> List FsmType -> Dict String String -> FsmType -> List Token
+process : String -> Model -> TokenState -> List TokenState -> Dict String String -> TokenState -> List Token
 process string model state queue loopDetectionDict parentState =
     let
         -- string neither exists or not equals in the loopDetectionDict
@@ -280,13 +280,13 @@ process string model state queue loopDetectionDict parentState =
             walk string model queue newMapping state
 
 
-walk : String -> Model -> List FsmType -> Dict String String -> FsmType -> List Token
+walk : String -> Model -> List TokenState -> Dict String String -> TokenState -> List Token
 walk string model queue loopDetectionDict parentState =
     -- empty string means we finished parsing
     if string == "" then
         []
     else
-        -- asses queue of upcoming states
+        -- assess queue of upcoming states
         case queue of
             -- is queue is empty it means we finished parsing
             [] ->
@@ -307,8 +307,8 @@ walk string model queue loopDetectionDict parentState =
                     previousString =
                         Dict.get (toString state) loopDetectionDict
 
-                    _ =
-                        Debug.log (toString state) newStatesQueue
+                    --                    _ =
+                    --                        Debug.log (toString state) newStatesQueue
                 in
                 case previousString of
                     Nothing ->
@@ -324,7 +324,7 @@ walk string model queue loopDetectionDict parentState =
                             process string model state newStatesQueue loopDetectionDict parentState
 
 
-getPossibleStates : FsmType -> List FsmType
+getPossibleStates : TokenState -> List TokenState
 getPossibleStates state =
     case state of
         Start ->

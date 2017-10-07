@@ -10,7 +10,10 @@
 <body>
 <div id="root">
     <div class="app-root"></div>
-    <pre class="app-output" style="font-size:9px"></pre>
+    <div class="app-output">
+        <pre class="app-output-tokens"></pre>
+        <pre class="app-output-lexemes"></pre>
+    </div>
 </div>
 <script>
   box({
@@ -18,7 +21,10 @@
     label: 'Query',
     placeholder: 'Ex: @name is Joe',
     onChange: function(outputJSON) {
-        document.querySelector('.app-output').innerHTML = JSON.stringify(outputJSON, null, 2);
+        const tokens = JSON.stringify(outputJSON.tokens, null, 2);
+        const lexemes = JSON.stringify(outputJSON.lexemes, null, 2);
+        document.querySelector('.app-output-tokens').innerHTML = tokens;
+        document.querySelector('.app-output-lexemes').innerHTML = lexemes;
     }
   });
 </script>
