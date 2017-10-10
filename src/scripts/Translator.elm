@@ -1,8 +1,13 @@
-module Translator exposing (run)
+module Translator exposing (TranslatorOutput(..), run)
 
-import Parser exposing (Node)
+import Model exposing (Model)
+import Parser exposing (AST)
 
 
-run : AST -> String
-run root =
-    ""
+type TranslatorOutput
+    = Output String
+
+
+run : AST -> Model -> TranslatorOutput
+run root model =
+    Output "[]"

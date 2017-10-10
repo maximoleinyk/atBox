@@ -15,11 +15,7 @@ type Term
 
 
 type AST
-    = Node
-        { left : AST
-        , value : String
-        , right : AST
-        }
+    = Node { left : AST, value : String, right : AST }
     | Leaf String
     | Nil
 
@@ -60,7 +56,11 @@ processRightParenthesis nextLexeme model stack restLexemes =
 
 processLeftParenthesis : Lexeme -> Model -> List Term -> List Lexeme -> List Term
 processLeftParenthesis nextLexeme model stack restLexemes =
-    buildExpressionTree restLexemes model (stack ++ [ LParenthesis ])
+    let
+        newStack =
+            stack ++ [ LParenthesis ]
+    in
+    buildExpressionTree restLexemes model newStack
 
 
 processField : Lexeme -> Model -> List Term -> List Lexeme -> List Term
@@ -277,6 +277,7 @@ optimizeStack stack memo =
                     rest
 
 
+convertTermToString : Term -> String
 convertTermToString term =
     case term of
         Expression terms ->
@@ -307,22 +308,28 @@ traverseTree stack =
         [ x ] ->
             case x of
                 Expression items ->
+                    -- [ Expression [ Expression [...] ] unwrap to Expression [...]
                     traverseTree items
 
                 _ ->
+                    -- unreachable condition because each item is and Expression
                     Debug.log "unreachable" Nil
 
         x :: y :: [] ->
+            -- [Expression, AndJoiner] - drop joiner
+            -- [Expression, OrJoiner] - drop joiner
             traverseTree [ x ]
 
         x :: y :: z :: _ ->
             if y == AndJoiner || y == OrJoiner then
+                -- [ Expression Joiner Expression ]
                 Node
                     { left = traverseTree [ x ]
                     , value = convertTermToString y
                     , right = traverseTree [ z ]
                     }
             else
+                -- [ Item Operator Item ]
                 Node
                     { left = Leaf (convertTermToString x)
                     , value = convertTermToString y
@@ -341,8 +348,5 @@ run lexemes model =
 
         result =
             traverseTree singleRoot
-
-        a =
-            Debug.log "stack" result
     in
     result

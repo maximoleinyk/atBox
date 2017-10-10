@@ -11,16 +11,29 @@
 <div id="root">
     <div class="app-root"></div>
     <div class="app-output">
-        <pre class="app-output-tokens"></pre>
-        <pre class="app-output-lexemes"></pre>
-        <pre class="app-output-ast"></pre>
+        <div>
+            <b>Tokens:</b>
+            <pre class="app-output-tokens"></pre>
+        </div>
+        <div>
+            <b>Lexemes:</b>
+            <pre class="app-output-lexemes"></pre>
+        </div>
+        <div>
+            <b>AST:</b>
+            <pre class="app-output-ast"></pre>
+        </div>
+        <div>
+            <b>Output:</b>
+            <pre class="app-output-translation"></pre>
+        </div>
     </div>
 </div>
 <script>
   box({
     root: '.app-root',
-    label: 'Query',
-    placeholder: 'Ex: @name is Joe',
+    label: 'Input:',
+    placeholder: 'Click here or start typing',
     queryFields: [
       {
         field: 'name',
@@ -47,9 +60,11 @@
         const tokens = JSON.stringify(outputJSON.tokens, null, 2);
         const lexemes = JSON.stringify(outputJSON.lexemes, null, 2);
         const ast = JSON.stringify(outputJSON.ast, null, 2);
+        const translation = JSON.stringify(JSON.parse(outputJSON.output), null, 2);
         document.querySelector('.app-output-tokens').innerHTML = tokens;
         document.querySelector('.app-output-lexemes').innerHTML = lexemes;
         document.querySelector('.app-output-ast').innerHTML = ast;
+        document.querySelector('.app-output-translation').innerHTML = translation;
     }
   });
 </script>

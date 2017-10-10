@@ -7,10 +7,11 @@ body {
     margin: 0 auto;
     padding: 20px;
 }
-#app-root {
-    box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    background-color: #fff;
-    padding: 20px;
+.app-root {
+    width: 100%;
+    min-height: 64px;
+    height: 64px;
+    content: " ";
 }
 .at-box label {
     display: inline-block;
@@ -50,10 +51,11 @@ body {
 
 .app-output {
     display: flex;
+    padding-top: 20px;
 }
 
 .app-output > * {
     flex-grow: 1;
     font-size: 9px !important;
-    max-width: 33.33%;
+    max-width: 25%;
 }

@@ -10,6 +10,7 @@ import Model exposing (Model)
 import Parser exposing (AST(Nil))
 import Ports exposing (..)
 import Tokenizer exposing (Token)
+import Translator
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -40,11 +41,14 @@ update msg model =
                 ast =
                     Parser.run lexemes model
 
+                translatedOutput =
+                    Translator.run ast model
+
                 --
                 --                c =
                 --                    Debug.log (toString ast) ""
                 result =
-                    encodeFsmResponse (FsmResponse tokens lexemes ast)
+                    encodeFsmResponse (FsmResponse tokens lexemes ast translatedOutput)
             in
             ( { model
                 | value = newValue
