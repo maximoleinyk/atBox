@@ -31,7 +31,7 @@ encodeAst =
             Leaf value ->
                 encodeSimpleType value
 
-            Nil ->
+            Null ->
                 null
 
 

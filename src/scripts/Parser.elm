@@ -7,17 +7,21 @@ import OperatorType exposing (OperatorType)
 
 type Term
     = Expression (List Term)
-    | Item Lexeme
-    | AndJoiner
-    | OrJoiner
-    | LParenthesis
-    | RParenthesis
+    | Operand Lexeme
+    | AndOperator
+    | OrOperator
+    | OpenParenthesis
+    | CloseParenthesis
 
 
 type AST
-    = Node { left : AST, value : String, right : AST }
+    = Node
+        { left : AST
+        , value : String
+        , right : AST
+        }
     | Leaf String
-    | Nil
+    | Null
 
 
 processRightParenthesis : Lexeme -> Model -> List Term -> List Lexeme -> List Term
@@ -32,7 +36,7 @@ processRightParenthesis nextLexeme model stack restLexemes =
 
                     nextItem :: restStack ->
                         case nextItem of
-                            LParenthesis ->
+                            OpenParenthesis ->
                                 ( restStack, memo )
 
                             _ ->
@@ -58,7 +62,7 @@ processLeftParenthesis : Lexeme -> Model -> List Term -> List Lexeme -> List Ter
 processLeftParenthesis nextLexeme model stack restLexemes =
     let
         newStack =
-            stack ++ [ LParenthesis ]
+            stack ++ [ OpenParenthesis ]
     in
     buildExpressionTree restLexemes model newStack
 
@@ -67,7 +71,7 @@ processField : Lexeme -> Model -> List Term -> List Lexeme -> List Term
 processField nextLexeme model stack restLexemes =
     let
         newStack =
-            stack ++ [ Item nextLexeme ]
+            stack ++ [ Operand nextLexeme ]
     in
     buildExpressionTree restLexemes model newStack
 
@@ -76,7 +80,7 @@ processOperator : Lexeme -> Model -> List Term -> List Lexeme -> List Term
 processOperator nextLexeme model stack restLexemes =
     let
         newStack =
-            stack ++ [ Item nextLexeme ]
+            stack ++ [ Operand nextLexeme ]
     in
     buildExpressionTree restLexemes model newStack
 
@@ -93,10 +97,10 @@ processExpression nextLexeme model stack restLexemes =
 
                     nextItem :: restStack ->
                         case nextItem of
-                            LParenthesis ->
+                            OpenParenthesis ->
                                 ( s, memo )
 
-                            OrJoiner ->
+                            OrOperator ->
                                 ( s, memo )
 
                             _ ->
@@ -132,14 +136,14 @@ processValue nextLexeme model stack restLexemes =
 
                     nextItem :: restStack ->
                         case nextItem of
-                            Item l ->
+                            Operand l ->
                                 extractItems restStack ([ nextItem ] ++ memo)
 
                             _ ->
                                 ( s, memo )
 
         reversedStack =
-            List.reverse (stack ++ [ Item nextLexeme ])
+            List.reverse (stack ++ [ Operand nextLexeme ])
 
         ( expressionStackOnly, extractedItems ) =
             extractItems reversedStack []
@@ -162,9 +166,9 @@ processJoiner nextLexeme model stack restLexemes =
 
         termType =
             if joinerValue == "or" then
-                OrJoiner
+                OrOperator
             else
-                AndJoiner
+                AndOperator
 
         extractItems : List Term -> List Term -> ( List Term, List Term )
         extractItems =
@@ -175,10 +179,10 @@ processJoiner nextLexeme model stack restLexemes =
 
                     nextItem :: restStack ->
                         case nextItem of
-                            LParenthesis ->
+                            OpenParenthesis ->
                                 ( s, memo )
 
-                            OrJoiner ->
+                            OrOperator ->
                                 ( s, memo )
 
                             _ ->
@@ -269,7 +273,7 @@ optimizeStack stack memo =
                     in
                     optimizeStack newStack []
 
-                OrJoiner ->
+                OrOperator ->
                     optimizeStack rest memo ++ [ next ]
 
                 _ ->
@@ -283,19 +287,19 @@ convertTermToString term =
         Expression terms ->
             toString terms
 
-        Item lexeme ->
+        Operand lexeme ->
             lexeme.value
 
-        AndJoiner ->
+        AndOperator ->
             "and"
 
-        OrJoiner ->
+        OrOperator ->
             "or"
 
-        LParenthesis ->
+        OpenParenthesis ->
             "("
 
-        RParenthesis ->
+        CloseParenthesis ->
             ")"
 
 
@@ -303,7 +307,7 @@ traverseTree : List Term -> AST
 traverseTree stack =
     case stack of
         [] ->
-            Nil
+            Null
 
         [ x ] ->
             case x of
@@ -312,8 +316,8 @@ traverseTree stack =
                     traverseTree items
 
                 _ ->
-                    -- unreachable condition because each item is and Expression
-                    Debug.log "unreachable" Nil
+                    -- x is not an expression
+                    Null
 
         x :: y :: [] ->
             -- [Expression, AndJoiner] - drop joiner
@@ -321,7 +325,7 @@ traverseTree stack =
             traverseTree [ x ]
 
         x :: y :: z :: _ ->
-            if y == AndJoiner || y == OrJoiner then
+            if y == AndOperator || y == OrOperator then
                 -- [ Expression Joiner Expression ]
                 Node
                     { left = traverseTree [ x ]

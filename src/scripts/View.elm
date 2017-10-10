@@ -78,7 +78,7 @@ getDropdownSuggestList : Model -> Html Msg
 getDropdownSuggestList model =
     let
         matchPatternFilter =
-            List.filter (\op -> contains (toLower model.currentToken) (toLower op.label))
+            List.filter (\op -> contains (toLower "") (toLower op.label))
     in
     case model.cursorPosition of
         NoContext ->

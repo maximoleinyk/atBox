@@ -19,16 +19,15 @@ getDefaultModel =
         , QueryField "age" "age" "string"
         ]
         NoContext
-        [ Operator "or" "or" True
-        , Operator "and" "and" True
-        , Operator "is" "is" False
-        , Operator "is not" "is not" False
-        , Operator "is either" "is either" False
-        , Operator "is neither" "is neither" False
-        , Operator "is in" "is in" False
-        , Operator "is not in" "is not in" False
+        [ Operator "or" "or"
+        , Operator "and" "and"
+        , Operator "is" "is"
+        , Operator "is not" "is not"
+        , Operator "is either" "is either"
+        , Operator "is neither" "is neither"
+        , Operator "is in" "is in"
+        , Operator "is not in" "is not in"
         ]
-        ""
         ""
         "@"
         0

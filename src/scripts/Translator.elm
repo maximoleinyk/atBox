@@ -22,13 +22,13 @@ getLeafValue node =
             value
 
         _ ->
-            Debug.log "logic error" ""
+            ""
 
 
 walk : AST -> Model -> Output -> Output
 walk root model output =
     case root of
-        Nil ->
+        Null ->
             output
 
         Leaf value ->
@@ -83,8 +83,5 @@ run root model =
     let
         result =
             walk root model NoOutput
-
-        a =
-            Debug.log "output" result
     in
     result

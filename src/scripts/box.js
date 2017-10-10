@@ -100,6 +100,7 @@
       const component = Elm.Main.embed(node, Object.assign({
         id: 'search-box',
         label: "Label",
+        value: node.value || '',
         queryFields: config.queryFields || [],
         placeholder: 'Click here and start typing'
       }, config || {}));

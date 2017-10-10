@@ -38,7 +38,7 @@ suite =
                                     , right = Leaf "Maksym"
                                     }
                             , value = "or"
-                            , right = Nil
+                            , right = Null
                             }
                         )
             ]

@@ -7,7 +7,7 @@ import FsmResponse exposing (FsmResponse)
 import Json.Encode exposing (object, string)
 import Lexer exposing (Lexeme)
 import Model exposing (Model)
-import Parser exposing (AST(Nil))
+import Parser exposing (AST(Null))
 import Ports exposing (..)
 import Tokenizer exposing (Token)
 import Translator
@@ -28,7 +28,7 @@ update msg model =
                     Tokenizer.run newValue model
 
                 --                a =
-                --                    Debug.log (toString tokens) ""
+                --                    Debug.log "Tokens:" (toString tokens)
                 contextAtCursorPosition =
                     NoContext
 
@@ -37,18 +37,21 @@ update msg model =
 
                 --
                 --                b =
-                --                    Debug.log (toString lexemes) ""
+                --                    Debug.log "Lexemes" (toString lexemes)
                 ast =
                     Parser.run lexemes model
 
-                translatedOutput =
+                --
+                --                c =
+                --                    Debug.log "AST" (toString ast)
+                output =
                     Translator.run ast model
 
                 --
-                --                c =
-                --                    Debug.log (toString ast) ""
+                --                d =
+                --                    Debug.log "Output" (toString output)
                 result =
-                    encodeFsmResponse (FsmResponse tokens lexemes ast translatedOutput)
+                    encodeFsmResponse (FsmResponse tokens lexemes ast output)
             in
             ( { model
                 | value = newValue

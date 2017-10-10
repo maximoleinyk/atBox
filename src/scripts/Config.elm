@@ -8,4 +8,5 @@ type alias Config =
     , label : String
     , placeholder : String
     , queryFields : List QueryField
+    , value : String
     }

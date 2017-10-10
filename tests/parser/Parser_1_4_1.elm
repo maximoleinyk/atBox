@@ -40,7 +40,7 @@ suite =
                                             , right = Leaf "Maksym"
                                             }
                                     , value = "and"
-                                    , right = Nil
+                                    , right = Null
                                     }
                             , value = "and"
                             , right =

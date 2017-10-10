@@ -8,7 +8,7 @@ import Json.Decode exposing (decodeValue, list)
 import Maybe exposing (withDefault)
 import Model exposing (..)
 import Operator exposing (Operator)
-import Parser exposing (AST(Nil))
+import Parser exposing (AST(Null))
 import Ports exposing (emitData)
 import QueryField exposing (QueryField)
 import QueryType exposing (QueryType, queryTypeDecoder)
@@ -22,7 +22,7 @@ init flags =
             getInitialModel flags
 
         message =
-            encodeFsmResponse (FsmResponse [] [] Nil NoOutput)
+            encodeFsmResponse (FsmResponse [] [] Null NoOutput)
 
         command =
             emitData message
@@ -31,24 +31,23 @@ init flags =
 
 
 getInitialModel : Config -> Model
-getInitialModel flags =
+getInitialModel config =
     Model
-        flags.id
-        flags.label
-        flags.placeholder
-        ""
-        flags.queryFields
+        config.id
+        config.label
+        config.placeholder
+        config.value
+        config.queryFields
         NoContext
-        [ Operator "or" "or" True
-        , Operator "and" "and" True
-        , Operator "is" "is" False
-        , Operator "is not" "is not" False
-        , Operator "is either" "is either" False
-        , Operator "is neither" "is neither" False
-        , Operator "is in" "is in" False
-        , Operator "is not in" "is not in" False
+        [ Operator "or" "or"
+        , Operator "and" "and"
+        , Operator "is" "is"
+        , Operator "is not" "is not"
+        , Operator "is either" "is either"
+        , Operator "is neither" "is neither"
+        , Operator "is in" "is in"
+        , Operator "is not in" "is not in"
         ]
-        ""
         ""
         "@"
         0

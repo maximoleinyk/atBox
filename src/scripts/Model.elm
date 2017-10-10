@@ -13,7 +13,6 @@ type alias Model =
     , queryFields : List QueryField
     , cursorPosition : CursorPosition
     , operators : List Operator
-    , currentToken : String
     , selectedItem : String
     , keywordDelimiter : String
     , cursorIndex : Int

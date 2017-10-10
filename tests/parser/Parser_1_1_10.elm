@@ -29,6 +29,6 @@ suite =
                         lexemes =
                             Lexer.run tokens model
                     in
-                    Expect.equal (Parser.run lexemes model) Nil
+                    Expect.equal (Parser.run lexemes model) Null
             ]
         ]
