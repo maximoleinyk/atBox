@@ -112,7 +112,10 @@ processExpression nextLexeme model stack restLexemes =
                 List.reverse expressionStackOnly ++ [ Expression extractedItems ]
 
         optimizedStack =
-            optimizeStack newStack []
+            if List.length newStack == 1 then
+                optimizeStack newStack []
+            else
+                newStack
     in
     buildExpressionTree restLexemes model optimizedStack
 
@@ -338,5 +341,8 @@ run lexemes model =
 
         result =
             traverseTree singleRoot
+
+        a =
+            Debug.log "stack" result
     in
     result

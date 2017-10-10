@@ -13,7 +13,7 @@ suite =
             "find a person whose @name is not Maksym Oliinyk"
     in
     describe "Tokenizer.run"
-        [ describe "is"
+        [ describe "is not"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)

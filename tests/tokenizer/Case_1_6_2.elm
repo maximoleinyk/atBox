@@ -13,7 +13,7 @@ suite =
             "@forename is in ()"
     in
     describe "Tokenizer.run"
-        [ describe "is"
+        [ describe "in"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)

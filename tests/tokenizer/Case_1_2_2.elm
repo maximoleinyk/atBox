@@ -13,7 +13,7 @@ suite =
             "@name is something not something Maksym"
     in
     describe "Tokenizer.run"
-        [ describe "is"
+        [ describe "is not"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)

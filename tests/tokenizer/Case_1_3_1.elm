@@ -13,7 +13,7 @@ suite =
             "@forename is either Maksym or Viktor"
     in
     describe "Tokenizer.run"
-        [ describe "is"
+        [ describe "is either"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)

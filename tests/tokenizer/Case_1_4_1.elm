@@ -13,7 +13,7 @@ suite =
             "@forename is Maksym and @surname Oliinyk and @age is 26"
     in
     describe "Tokenizer.run"
-        [ describe "is"
+        [ describe "and"
             [ test testCase <|
                 \_ ->
                     Expect.equal (Tokenizer.run testCase getDefaultModel)
