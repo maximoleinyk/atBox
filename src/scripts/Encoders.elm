@@ -14,7 +14,7 @@ import Json.Encode exposing (Value, encode, int, list, null, object, string)
 import Lexer exposing (Lexeme, LexemeType)
 import Parser exposing (AST(..))
 import Tokenizer exposing (ParsedToken, Token, TokenState)
-import Translator exposing (TranslatorOutput(Output))
+import Translator exposing (Output(..))
 
 
 encodeAst : AST -> Value
@@ -89,12 +89,38 @@ encodeLexemes =
         list (List.map f lexemes)
 
 
-encodeTranslatorOutput : TranslatorOutput -> Value
+encodeList : List Output -> List Value
+encodeList =
+    \list ->
+        case list of
+            [] ->
+                []
+
+            next :: rest ->
+                [ encodeTranslatorOutput next ] ++ encodeList rest
+
+
+encodeTranslatorOutput : Output -> Value
 encodeTranslatorOutput =
     \output ->
         case output of
-            Output value ->
-                string value
+            AndOutput output ->
+                object
+                    [ ( "and", list (encodeList output.and) ) ]
+
+            OrOutput output ->
+                object
+                    [ ( "or", list (encodeList output.or) ) ]
+
+            EndOutput output ->
+                object
+                    [ ( "field", string output.field )
+                    , ( "operator", string output.operator )
+                    , ( "value", string output.value )
+                    ]
+
+            NoOutput ->
+                null
 
 
 encodeSimpleType =

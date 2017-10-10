@@ -60,7 +60,7 @@
         const tokens = JSON.stringify(outputJSON.tokens, null, 2);
         const lexemes = JSON.stringify(outputJSON.lexemes, null, 2);
         const ast = JSON.stringify(outputJSON.ast, null, 2);
-        const translation = JSON.stringify(JSON.parse(outputJSON.output), null, 2);
+        const translation = JSON.stringify(outputJSON.output, null, 2);
         document.querySelector('.app-output-tokens').innerHTML = tokens;
         document.querySelector('.app-output-lexemes').innerHTML = lexemes;
         document.querySelector('.app-output-ast').innerHTML = ast;

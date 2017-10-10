@@ -12,7 +12,7 @@ import Parser exposing (AST(Nil))
 import Ports exposing (emitData)
 import QueryField exposing (QueryField)
 import QueryType exposing (QueryType, queryTypeDecoder)
-import Translator exposing (TranslatorOutput(Output))
+import Translator exposing (Output(NoOutput))
 
 
 init : Config -> ( Model, Cmd msg )
@@ -22,7 +22,7 @@ init flags =
             getInitialModel flags
 
         message =
-            encodeFsmResponse (FsmResponse [] [] Nil (Output "[]"))
+            encodeFsmResponse (FsmResponse [] [] Nil NoOutput)
 
         command =
             emitData message
