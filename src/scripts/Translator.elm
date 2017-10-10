@@ -1,8 +1,8 @@
 module Translator exposing (run)
 
-import Parser exposing (ASTNode)
+import Parser exposing (Node)
 
 
-run : ASTNode -> String
+run : AST -> String
 run root =
     ""

@@ -65,7 +65,7 @@ suite =
                                 , length = 1
                                 }
                           }
-                        , { state = OrTerm
+                        , { state = EitherOrTerm
                           , parsedToken =
                                 { string = "or"
                                 , length = 2

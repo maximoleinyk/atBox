@@ -41,9 +41,11 @@ type TokenState
     | InTerm
     | InOperator
     | InValue
+    | OpenParenthesisInOperatorTerm
+    | CloseParenthesisInOperatorTerm
+    | CommaTerm
     | OpenParenthesisTerm
     | CloseParenthesisTerm
-    | CommaTerm
 
 
 type alias ParsedToken =
@@ -233,6 +235,12 @@ process string model state queue loopDetectionDict parentState =
         CommaTerm ->
             return string model state comma queue newMapping parentState
 
+        CloseParenthesisInOperatorTerm ->
+            return string model state closeParenthesis queue newMapping parentState
+
+        OpenParenthesisInOperatorTerm ->
+            return string model state openParenthesis queue newMapping parentState
+
         CloseParenthesisTerm ->
             return string model state closeParenthesis queue newMapping parentState
 
@@ -357,7 +365,7 @@ getPossibleStates state =
             [ IsTerm, SpaceTerm, EitherOrOperator, NeitherNorOperator, NotTerm, SpaceTerm, InOperator, SpaceTerm, Value ]
 
         InOperator ->
-            [ InTerm, Statement, OpenParenthesisTerm, InValue, CloseParenthesisTerm ]
+            [ InTerm, Statement, OpenParenthesisInOperatorTerm, InValue, CloseParenthesisInOperatorTerm ]
 
         EitherOrOperator ->
             [ EitherTerm, SpaceTerm, Value, SpaceTerm, EitherOrTerm, SpaceTerm, Value ]
@@ -392,7 +400,7 @@ return string model state tokenizer queue newMapping parentState =
     in
     if result.length == -1 then
         case state of
-            OpenParenthesisTerm ->
+            OpenParenthesisInOperatorTerm ->
                 let
                     numberOfStatesToDrop =
                         if parentState == Criterion then
@@ -447,7 +455,7 @@ return string model state tokenizer queue newMapping parentState =
             AndTerm ->
                 token ++ walk newString model (newQueue 2 queue) newMapping parentState
 
-            CloseParenthesisTerm ->
+            CloseParenthesisInOperatorTerm ->
                 -- remove IsOperator after is in() closing bracket
                 token ++ walk newString model (newQueue 1 queue) newMapping parentState
 

@@ -53,13 +53,13 @@ suite =
                                 , length = 1
                                 }
                           }
-                        , { state = OpenParenthesisTerm
+                        , { state = OpenParenthesisInOperatorTerm
                           , parsedToken =
                                 { string = "("
                                 , length = 1
                                 }
                           }
-                        , { state = CloseParenthesisTerm
+                        , { state = CloseParenthesisInOperatorTerm
                           , parsedToken =
                                 { string = ")"
                                 , length = 1

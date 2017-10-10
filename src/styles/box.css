@@ -3,7 +3,6 @@ body {
     font-family: Helvetica, sans-serif;
 }
 #root {
-    max-width: 500px;
     min-width: 350px;
     margin: 0 auto;
     padding: 20px;
@@ -55,7 +54,6 @@ body {
 
 .app-output > * {
     flex-grow: 1;
-    min-width: 50%;
-    max-width: 50%;
     font-size: 9px !important;
+    max-width: 33.33%;
 }

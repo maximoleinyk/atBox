@@ -13,6 +13,7 @@
     <div class="app-output">
         <pre class="app-output-tokens"></pre>
         <pre class="app-output-lexemes"></pre>
+        <pre class="app-output-ast"></pre>
     </div>
 </div>
 <script>
@@ -20,11 +21,35 @@
     root: '.app-root',
     label: 'Query',
     placeholder: 'Ex: @name is Joe',
+    queryFields: [
+      {
+        field: 'name',
+        label: 'Name',
+        queryType: 'string'
+      },
+      {
+        field: 'forename',
+        label: 'Forename',
+        queryType: 'string'
+      },
+      {
+        field: 'surname',
+        label: 'Surname',
+        queryType: 'string'
+      },
+      {
+        field: 'age',
+        label: 'Age',
+        queryType: 'string'
+      }
+    ],
     onChange: function(outputJSON) {
         const tokens = JSON.stringify(outputJSON.tokens, null, 2);
         const lexemes = JSON.stringify(outputJSON.lexemes, null, 2);
+        const ast = JSON.stringify(outputJSON.ast, null, 2);
         document.querySelector('.app-output-tokens').innerHTML = tokens;
         document.querySelector('.app-output-lexemes').innerHTML = lexemes;
+        document.querySelector('.app-output-ast').innerHTML = ast;
     }
   });
 </script>

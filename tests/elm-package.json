@@ -6,16 +6,9 @@
     "source-directories": [
         "../src/scripts",
         ".",
-        "./tokenizer/and",
-        "./tokenizer/or",
-        "./tokenizer/contains",
-        "./tokenizer/is",
-        "./tokenizer/is/not",
-        "./tokenizer/is/not/in",
-        "./tokenizer/is/in",
-        "./tokenizer/is/either",
-        "./tokenizer/is/neither",
-        "./lexer"
+        "./tokenizer",
+        "./lexer",
+        "./parser"
     ],
     "exposed-modules": [],
     "native-modules": true,

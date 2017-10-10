@@ -2,28 +2,14 @@ module Update exposing (..)
 
 import Actions exposing (Msg(..))
 import CursorPosition exposing (CursorPosition(NoContext))
-import Encoders exposing (encodeLexemes, encodeTokens)
+import Encoders exposing (encodeFsmResponse, encodeLexemes, encodeTokens)
+import FsmResponse exposing (FsmResponse)
 import Json.Encode exposing (object, string)
 import Lexer exposing (Lexeme)
 import Model exposing (Model)
+import Parser exposing (AST(Nil))
 import Ports exposing (..)
 import Tokenizer exposing (Token)
-
-
-type alias FsmResponse =
-    { tokens : List Token
-    , lexemes : List Lexeme
-    }
-
-
-encodeFsmResponse : FsmResponse -> String
-encodeFsmResponse response =
-    Json.Encode.encode 2
-        (object
-            [ ( "tokens", encodeTokens response.tokens )
-            , ( "lexemes", encodeLexemes response.lexemes )
-            ]
-        )
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -40,19 +26,25 @@ update msg model =
                 tokens =
                     Tokenizer.run newValue model
 
+                --                a =
+                --                    Debug.log (toString tokens) ""
                 contextAtCursorPosition =
                     NoContext
 
                 lexemes =
                     Lexer.run tokens model
 
-                --                a =
-                --                    Debug.log (toString tokens) ""
                 --
                 --                b =
                 --                    Debug.log (toString lexemes) ""
+                ast =
+                    Parser.run lexemes model
+
+                --
+                --                c =
+                --                    Debug.log (toString ast) ""
                 result =
-                    encodeFsmResponse (FsmResponse tokens lexemes)
+                    encodeFsmResponse (FsmResponse tokens lexemes ast)
             in
             ( { model
                 | value = newValue

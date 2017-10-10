@@ -46,7 +46,7 @@ getNextStates state =
             [ OPEN_PARENTHESIS, OPERATOR_GROUP, CLOSE_PARENTHESIS ]
 
         OPEN_PARENTHESIS ->
-            [ OPEN_PARENTHESIS_TERM, EXPRESSION ]
+            [ OPEN_PARENTHESIS_TERM, OPEN_PARENTHESIS ]
 
         CLOSE_PARENTHESIS ->
             [ CLOSE_PARENTHESIS_TERM, CLOSE_PARENTHESIS ]
@@ -66,7 +66,7 @@ parseCommaSeparatedValues tokens model =
 
         currentToken :: rest ->
             case currentToken.state of
-                CloseParenthesisTerm ->
+                CloseParenthesisInOperatorTerm ->
                     [ currentToken ]
 
                 _ ->
@@ -206,7 +206,7 @@ parseMultiValue tokens model =
                     -- skip any spaces
                     parseMultiValue restTokens model
 
-                OpenParenthesisTerm ->
+                OpenParenthesisInOperatorTerm ->
                     let
                         result : List Token
                         result =

@@ -1,8 +1,46 @@
-module Encoders exposing (encodeLexemeType, encodeLexemes, encodeParsedToken, encodeState, encodeTokens)
+module Encoders
+    exposing
+        ( encodeAst
+        , encodeFsmResponse
+        , encodeLexemes
+        , encodeParsedToken
+        , encodeState
+        , encodeTokens
+        )
 
-import Json.Encode exposing (Value, int, list, object, string)
+import FsmResponse exposing (FsmResponse)
+import Json.Encode exposing (Value, int, list, null, object, string)
 import Lexer exposing (Lexeme, LexemeType)
+import Parser exposing (AST(..))
 import Tokenizer exposing (ParsedToken, Token, TokenState)
+
+
+encodeAst : AST -> Value
+encodeAst root =
+    case root of
+        Node node ->
+            object
+                [ ( "left", encodeAst node.left )
+                , ( "value", string node.value )
+                , ( "right", encodeAst node.right )
+                ]
+
+        Leaf value ->
+            encodeSimpleType value
+
+        Nil ->
+            null
+
+
+encodeFsmResponse : FsmResponse -> String
+encodeFsmResponse response =
+    Json.Encode.encode 2
+        (object
+            [ ( "tokens", encodeTokens response.tokens )
+            , ( "lexemes", encodeLexemes response.lexemes )
+            , ( "ast", encodeAst response.ast )
+            ]
+        )
 
 
 encodeState : TokenState -> Value
@@ -37,13 +75,12 @@ encodeLexemes lexemes =
         f =
             \l ->
                 object
-                    [ ( "lexemeType", encodeLexemeType l.lexemeType )
+                    [ ( "lexemeType", encodeSimpleType l.lexemeType )
                     , ( "value", string l.value )
                     ]
     in
     list (List.map f lexemes)
 
 
-encodeLexemeType : LexemeType -> Json.Encode.Value
-encodeLexemeType =
-    \lexemeType -> string (toString lexemeType)
+encodeSimpleType =
+    \encodeSimpleType -> string (toString encodeSimpleType)

@@ -22,7 +22,7 @@ onKeyHandle : Model -> Attribute Msg
 onKeyHandle model =
     let
         options =
-            Html.Events.Options False True
+            Html.Events.Options False False
 
         handleKeyPress code =
             case code of

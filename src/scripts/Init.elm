@@ -2,10 +2,13 @@ module Init exposing (getInitialModel, init)
 
 import Config exposing (..)
 import CursorPosition exposing (CursorPosition(NoContext))
+import Encoders exposing (encodeFsmResponse)
+import FsmResponse exposing (FsmResponse)
 import Json.Decode exposing (decodeValue, list)
 import Maybe exposing (withDefault)
 import Model exposing (..)
 import Operator exposing (Operator)
+import Parser exposing (AST(Nil))
 import Ports exposing (emitData)
 import QueryField exposing (QueryField)
 import QueryType exposing (QueryType, queryTypeDecoder)
@@ -13,7 +16,17 @@ import QueryType exposing (QueryType, queryTypeDecoder)
 
 init : Config -> ( Model, Cmd msg )
 init flags =
-    ( getInitialModel flags, emitData "{ \"tokens\":[], \"lexemes\":[] }" )
+    let
+        model =
+            getInitialModel flags
+
+        message =
+            encodeFsmResponse (FsmResponse [] [] Nil)
+
+        command =
+            emitData message
+    in
+    ( model, command )
 
 
 getInitialModel : Config -> Model

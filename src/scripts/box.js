@@ -48,9 +48,9 @@
     setSelectedTextRange(elm, pos, pos);
   }
   
-  function getCaretPosition(elm) {
-    if (typeof elm.selectionStart !== "undefined") {
-      return elm.selectionStart;
+  function getCaretPosition(input) {
+    if (typeof input.selectionStart !== "undefined") {
+      return input.selectionStart;
     } else if (document.selection) {
       return;
     }
@@ -100,35 +100,13 @@
       const component = Elm.Main.embed(node, Object.assign({
         id: 'search-box',
         label: "Label",
-        queryFields: [
-          {
-            field: 'name',
-            label: 'Name',
-            queryType: 'string'
-          },
-          {
-            field: 'forename',
-            label: 'Forename',
-            queryType: 'string'
-          },
-          {
-            field: 'surname',
-            label: 'Surname',
-            queryType: 'string'
-          },
-          {
-            field: 'age',
-            label: 'Age',
-            queryType: 'string'
-          }
-        ],
+        queryFields: config.queryFields || [],
         placeholder: 'Click here and start typing'
       }, config || {}));
   
       component.ports.getCursorPosition.subscribe(function() {
         const input = document.querySelector(config.root + ' input');
         const caretPosition = getCaretPosition(input);
-        console.log(caretPosition);
         component.ports.setCursorPosition.send(caretPosition);
       });
       
