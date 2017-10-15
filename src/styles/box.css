@@ -1,17 +1,25 @@
 body {
-    background-color: #f9f9f9;
     font-family: Helvetica, sans-serif;
+    min-width: 350px;
 }
 #root {
-    min-width: 350px;
-    margin: 0 auto;
-    padding: 20px;
+    padding: 20px 40px 40px;
+    background-color: #fafafa;
 }
-.app-root {
-    width: 100%;
-    min-height: 64px;
-    height: 64px;
-    content: " ";
+.page-output {
+    display: flex;
+    padding: 40px;
+    box-shadow: 0 -1px 2px rgba(0,0,0,0.08);
+}
+
+.page-output > * {
+    flex-grow: 1;
+    font-size: 9px !important;
+    max-width: 25%;
+}
+
+.at-box {
+    position: relative;
 }
 .at-box label {
     display: inline-block;
@@ -21,21 +29,24 @@ body {
     display: block;
     width: 100%;
     padding: .5rem .75rem;
-    font-size: 1rem;
     line-height: 1.25;
     color: #495057;
     background-color: #fff;
     background-image: none;
     background-clip: padding-box;
-    border: 1px solid rgba(0,0,0,.15);
-    border-radius: .1rem;
-    transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    border: none;
+    vertical-align: top;
+    border-radius: 2px;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+    transition: box-shadow 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    font-weight: 300;
+    font-size: 24px;
 }
 .at-box input:focus {
     color: #495057;
     background-color: #fff;
-    border-color: #80bdff;
     outline: 0;
+    box-shadow: 0 3px 8px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.08);
 }
 .at-box input::placeholder {
     color: #ccc;
@@ -49,13 +60,54 @@ body {
     list-style-type: none;
 }
 
-.app-output {
-    display: flex;
-    padding-top: 20px;
+.at-box-suggest-list {
+    position: absolute;
+    left: -1px;
+    top: 100%;
+    padding:0;
+    margin: 0;
+    border: 1px solid #ccc;
+    border-top: none;
+    background-color: #fff;
+    z-index: 999;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 0 0 0 rgba(0,0,0,0.08);
 }
 
-.app-output > * {
-    flex-grow: 1;
-    font-size: 9px !important;
-    max-width: 25%;
+.at-box-suggest-list li a {
+    display: block;
+    cursor: default;
+    text-decoration: none;
+    color: #333;
+    padding: .35rem 0.75rem;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.at-box-suggest-list li a:hover {
+    background-color: #eee;
+}
+
+.meet-at-bot {
+    color: #ccc;
+    overflow: hidden;
+    text-align: center;
+    font-style: italic;
+}
+.meet-at-bot:before,
+.meet-at-bot:after {
+    background-color: #ccc;
+    content: "";
+    display: inline-block;
+    height: 1px;
+    position: relative;
+    vertical-align: middle;
+    width: 50%;
+}
+.meet-at-bot:before {
+    right: 0.5em;
+    margin-left: -50%;
+}
+.meet-at-bot:after {
+    left: 0.5em;
+    margin-right: -50%;
 }

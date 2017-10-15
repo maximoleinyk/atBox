@@ -1,9 +1,9 @@
 module Lexer_1_1_4 exposing (..)
 
 import Expect
-import Lexer exposing (LexemeType(..), LexerState(..))
+import GlobalTypes exposing (LexemeType(Field, LexemeValue, Operator), OperatorType(IsType))
+import Lexer
 import MockModel exposing (getDefaultModel)
-import OperatorType exposing (OperatorType(..))
 import Test exposing (Test, describe, test)
 import Tokenizer
 
@@ -22,18 +22,21 @@ suite =
                         model =
                             getDefaultModel
 
-                        tokens =
+                        ( tokens, remainingStates ) =
                             Tokenizer.run testCase model
                     in
                     Expect.equal (Lexer.run tokens model)
                         [ { lexemeType = Field
                           , value = "@name"
+                          , index = 0
                           }
                         , { lexemeType = Operator IsType
                           , value = "is"
+                          , index = 6
                           }
-                        , { lexemeType = Value
+                        , { lexemeType = LexemeValue
                           , value = "Maksym Oliinyk"
+                          , index = 9
                           }
                         ]
             ]

@@ -1,9 +1,10 @@
 module Case_1_1_8 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,36 +17,30 @@ suite =
         [ describe "is"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = UnknownKeywordTerm
-                          , parsedToken =
-                                { string = "@@@name"
-                                , length = 7
-                                }
+                          , value = "@@@name"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 7
                           }
                         , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                          , value = "is"
+                          , index = 8
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 10
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Max"
-                                , length = 3
-                                }
+                          , value = "Max"
+                          , index = 11
                           }
                         ]
             ]

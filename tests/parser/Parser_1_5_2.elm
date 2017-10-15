@@ -1,10 +1,10 @@
 module Parser_1_5_2 exposing (..)
 
 import Expect
-import Lexer exposing (LexemeType(..), LexerState(..))
+import GlobalTypes exposing (AST(..))
+import Lexer
 import MockModel exposing (getDefaultModel)
-import OperatorType exposing (OperatorType(..))
-import Parser exposing (AST(..))
+import Parser
 import Test exposing (Test, describe, test)
 import Tokenizer
 
@@ -23,7 +23,7 @@ suite =
                         model =
                             getDefaultModel
 
-                        tokens =
+                        ( tokens, remainingStates ) =
                             Tokenizer.run testCase model
 
                         lexemes =
@@ -43,7 +43,7 @@ suite =
                                     , right =
                                         Node
                                             { left = Leaf "@surname"
-                                            , value = "either"
+                                            , value = "is either"
                                             , right = Leaf " Ivanov or Petrov "
                                             }
                                     }
@@ -60,7 +60,7 @@ suite =
                                     , right =
                                         Node
                                             { left = Leaf "@surname"
-                                            , value = "neither"
+                                            , value = "is neither"
                                             , right = Leaf " Sokolov nor Smirnov"
                                             }
                                     }

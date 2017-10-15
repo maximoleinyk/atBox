@@ -1,9 +1,10 @@
 module Case_1_1_6 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,96 +17,70 @@ suite =
         [ describe "is"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = WordTerm
-                          , parsedToken =
-                                { string = "find"
-                                , length = 4
-                                }
+                          , value = "find"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 4
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "a"
-                                , length = 1
-                                }
+                          , value = "a"
+                          , index = 5
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 6
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "person"
-                                , length = 6
-                                }
+                          , value = "person"
+                          , index = 7
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 13
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "whose"
-                                , length = 5
-                                }
+                          , value = "whose"
+                          , index = 14
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 19
                           }
                         , { state = UnknownKeywordTerm
-                          , parsedToken =
-                                { string = "@"
-                                , length = 1
-                                }
+                          , value = "@"
+                          , index = 20
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 21
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "name"
-                                , length = 4
-                                }
+                          , value = "name"
+                          , index = 22
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 26
                           }
-                        , { state = WordTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsTerm
+                          , value = "is"
+                          , index = 27
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 29
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 30
                           }
                         ]
             ]

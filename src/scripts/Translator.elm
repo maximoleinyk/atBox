@@ -1,22 +1,10 @@
-module Translator exposing (Output(..), run)
+module Translator exposing (run)
 
-import Model exposing (Model)
-import Parser exposing (AST(..))
-
-
-type Output
-    = AndOutput { and : List Output }
-    | OrOutput { or : List Output }
-    | EndOutput
-        { field : String
-        , operator : String
-        , value : String
-        }
-    | NoOutput
+import GlobalTypes exposing (AST(..), Model, TranslatorOutput(..))
 
 
-getLeafValue : AST -> String
-getLeafValue node =
+getLeafValue : AST -> String -> String
+getLeafValue node operator =
     case node of
         Leaf value ->
             value
@@ -25,7 +13,7 @@ getLeafValue node =
             ""
 
 
-walk : AST -> Model -> Output -> Output
+walk : AST -> Model -> TranslatorOutput -> TranslatorOutput
 walk root model output =
     case root of
         Null ->
@@ -50,9 +38,9 @@ walk root model output =
                 let
                     result =
                         EndOutput
-                            { field = getLeafValue node.left
+                            { field = getLeafValue node.left node.value
                             , operator = node.value
-                            , value = getLeafValue node.right
+                            , value = getLeafValue node.right node.value
                             }
                 in
                 case output of
@@ -78,7 +66,7 @@ walk root model output =
                     AndOutput { and = result }
 
 
-run : AST -> Model -> Output
+run : AST -> Model -> TranslatorOutput
 run root model =
     let
         result =

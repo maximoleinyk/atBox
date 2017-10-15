@@ -1,9 +1,10 @@
 module Case_1_2_3 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,108 +17,70 @@ suite =
         [ describe "is not"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = WordTerm
-                          , parsedToken =
-                                { string = "find"
-                                , length = 4
-                                }
+                          , value = "find"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 4
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "a"
-                                , length = 1
-                                }
+                          , value = "a"
+                          , index = 5
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 6
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "person"
-                                , length = 6
-                                }
+                          , value = "person"
+                          , index = 7
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 13
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "whose"
-                                , length = 5
-                                }
+                          , value = "whose"
+                          , index = 14
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 19
                           }
                         , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@name"
-                                , length = 5
-                                }
+                          , value = "@name"
+                          , index = 20
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 25
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsNotTerm
+                          , value = "is not"
+                          , index = 26
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = NotTerm
-                          , parsedToken =
-                                { string = "not"
-                                , length = 3
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 32
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 33
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 39
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Oliinyk"
-                                , length = 7
-                                }
+                          , value = "Oliinyk"
+                          , index = 40
                           }
                         ]
             ]

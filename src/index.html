@@ -1,7 +1,7 @@
 <!doctype>
 <html>
 <head>
-    <title>Elm Book</title>
+    <title>@Box</title>
     <link rel="stylesheet" href="../node_modules/normalize.css/normalize.css"/>
     <link rel="stylesheet" href="styles/box.css"/>
     <script src="main.js"></script>
@@ -9,51 +9,63 @@
 </head>
 <body>
 <div id="root">
+    <p class="meet-at-bot">Meet @box</p>
     <div class="app-root"></div>
-    <div class="app-output">
-        <div>
-            <b>Tokens:</b>
-            <pre class="app-output-tokens"></pre>
-        </div>
-        <div>
-            <b>Lexemes:</b>
-            <pre class="app-output-lexemes"></pre>
-        </div>
-        <div>
-            <b>AST:</b>
-            <pre class="app-output-ast"></pre>
-        </div>
-        <div>
-            <b>Output:</b>
-            <pre class="app-output-translation"></pre>
-        </div>
+</div>
+<div class="page-output">
+    <div>
+        <b>Tokens:</b>
+        <pre class="app-output-tokens"></pre>
+    </div>
+    <div>
+        <b>Lexemes:</b>
+        <pre class="app-output-lexemes"></pre>
+    </div>
+    <div>
+        <b>AST:</b>
+        <pre class="app-output-ast"></pre>
+    </div>
+    <div>
+        <b>Output:</b>
+        <pre class="app-output-translation"></pre>
     </div>
 </div>
 <script>
   box({
     root: '.app-root',
-    label: 'Input:',
+    label: '',
     placeholder: 'Click here or start typing',
     queryFields: [
       {
         field: 'name',
         fieldType: 'string',
-        label: 'Name'
+        label: 'name'
       },
       {
         field: 'forename',
         fieldType: 'string',
-        label: 'Forename'
+        label: 'forename'
       },
       {
         field: 'surname',
         fieldType: 'string',
-        label: 'Surname'
+        label: 'surname'
       },
       {
         field: 'age',
         fieldType: 'string',
-        label: 'Age'
+        label: 'age'
+      },
+      {
+        field: 'status',
+        fieldType: 'enum',
+        label: 'status',
+        values: [
+          'Married',
+          'Single',
+          'Engaged',
+          'Complicated'
+        ]
       }
     ],
     onChange: function(outputJSON) {

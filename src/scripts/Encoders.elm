@@ -3,18 +3,12 @@ module Encoders
         ( encodeAst
         , encodeFsmResponse
         , encodeLexemes
-        , encodeParsedToken
-        , encodeState
         , encodeTokens
         , encodeTranslatorOutput
         )
 
-import FsmResponse exposing (FsmResponse)
+import GlobalTypes exposing (AST(..), FsmResponse, Lexeme, Token, TokenState, TranslatorOutput(..))
 import Json.Encode exposing (Value, encode, int, list, null, object, string)
-import Lexer exposing (Lexeme, LexemeType)
-import Parser exposing (AST(..))
-import Tokenizer exposing (ParsedToken, Token, TokenState)
-import Translator exposing (Output(..))
 
 
 encodeAst : AST -> Value
@@ -29,7 +23,7 @@ encodeAst =
                     ]
 
             Leaf value ->
-                encodeSimpleType value
+                encodeToString value
 
             Null ->
                 null
@@ -43,22 +37,9 @@ encodeFsmResponse response =
             , ( "lexemes", encodeLexemes response.lexemes )
             , ( "ast", encodeAst response.ast )
             , ( "output", encodeTranslatorOutput response.output )
+            , ( "string", string response.string )
             ]
         )
-
-
-encodeState : TokenState -> Value
-encodeState =
-    \state -> string (toString state)
-
-
-encodeParsedToken : ParsedToken -> Value
-encodeParsedToken =
-    \parsedToken ->
-        object
-            [ ( "string", string parsedToken.string )
-            , ( "length", int parsedToken.length )
-            ]
 
 
 encodeTokens : List Token -> Value
@@ -68,8 +49,9 @@ encodeTokens =
             f =
                 \t ->
                     object
-                        [ ( "state", encodeState t.state )
-                        , ( "parsedToken", encodeParsedToken t.parsedToken )
+                        [ ( "state", encodeToString t.state )
+                        , ( "value", string t.value )
+                        , ( "index", int t.index )
                         ]
         in
         list (List.map f tokens)
@@ -82,35 +64,36 @@ encodeLexemes =
             f =
                 \l ->
                     object
-                        [ ( "lexemeType", encodeSimpleType l.lexemeType )
+                        [ ( "lexemeType", encodeToString l.lexemeType )
                         , ( "value", string l.value )
+                        , ( "index", int l.index )
                         ]
         in
         list (List.map f lexemes)
 
 
-encodeList : List Output -> List Value
-encodeList =
+encodeTranslatorOutputs : List TranslatorOutput -> List Value
+encodeTranslatorOutputs =
     \list ->
         case list of
             [] ->
                 []
 
             next :: rest ->
-                [ encodeTranslatorOutput next ] ++ encodeList rest
+                [ encodeTranslatorOutput next ] ++ encodeTranslatorOutputs rest
 
 
-encodeTranslatorOutput : Output -> Value
+encodeTranslatorOutput : TranslatorOutput -> Value
 encodeTranslatorOutput =
     \output ->
         case output of
             AndOutput output ->
                 object
-                    [ ( "and", list (encodeList output.and) ) ]
+                    [ ( "and", list (encodeTranslatorOutputs output.and) ) ]
 
             OrOutput output ->
                 object
-                    [ ( "or", list (encodeList output.or) ) ]
+                    [ ( "or", list (encodeTranslatorOutputs output.or) ) ]
 
             EndOutput output ->
                 object
@@ -123,5 +106,5 @@ encodeTranslatorOutput =
                 null
 
 
-encodeSimpleType =
+encodeToString =
     \encodeSimpleType -> string (toString encodeSimpleType)

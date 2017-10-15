@@ -1,60 +1,11 @@
-module Tokenizer exposing (ParsedToken, Token, TokenState(..), run)
+module Tokenizer exposing (getPossibleStates, isTermState, run)
 
 import Dict exposing (Dict)
-import Model exposing (Model)
+import GlobalTypes exposing (Model, Token, TokenState(..))
 import Regex exposing (HowMany(All), Regex)
 
 
-type alias Token =
-    { state : TokenState
-    , parsedToken : ParsedToken
-    }
-
-
-type TokenState
-    = Start
-    | Statement
-    | SpaceTerm
-    | WordTerm
-    | KeywordTerm
-    | Value
-    | MultiQuotedWord
-    | StartQuoteTerm
-    | EndQuoteTerm
-    | Criteria
-    | Criterion
-    | Conjunction
-    | Operator
-    | OperatorGroup
-    | EitherOrTerm
-    | AndTerm
-    | OrTerm
-    | NorTerm
-    | NotTerm
-    | IsTerm
-    | IsOperator
-    | EitherTerm
-    | EitherOrOperator
-    | NeitherTerm
-    | NeitherNorOperator
-    | UnknownKeywordTerm
-    | InTerm
-    | InOperator
-    | InValue
-    | OpenParenthesisInOperatorTerm
-    | CloseParenthesisInOperatorTerm
-    | CommaTerm
-    | OpenParenthesisTerm
-    | CloseParenthesisTerm
-
-
-type alias ParsedToken =
-    { string : String
-    , length : Int
-    }
-
-
-run : String -> Model -> List Token
+run : String -> Model -> ( List Token, List TokenState )
 run string model =
     let
         initialState =
@@ -63,7 +14,7 @@ run string model =
         loopDetection =
             Dict.empty
     in
-    walk string model [ initialState ] loopDetection initialState
+    walk string model [ initialState ] loopDetection initialState 0
 
 
 regexTokenizer : String -> Regex -> String
@@ -93,14 +44,14 @@ openParenthesis string model =
     regexTokenizer string (Regex.regex "^(\\()")
 
 
-inTerm : String -> Model -> String
-inTerm string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(in)"))
+isIn : String -> Model -> String
+isIn string model =
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+in)"))
 
 
-comma : String -> Model -> String
-comma string model =
-    regexTokenizer string (Regex.regex "^(,)")
+isNotIn : String -> Model -> String
+isNotIn string model =
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+not\\s+in)"))
 
 
 is : String -> Model -> String
@@ -108,24 +59,29 @@ is string model =
     regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is)"))
 
 
-either : String -> Model -> String
-either string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(either)"))
+isNot : String -> Model -> String
+isNot string model =
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+not)"))
 
 
-neither : String -> Model -> String
-neither string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(neither)"))
+isEither : String -> Model -> String
+isEither string model =
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+either)"))
+
+
+isNeither : String -> Model -> String
+isNeither string model =
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+neither)"))
+
+
+comma : String -> Model -> String
+comma string model =
+    regexTokenizer string (Regex.regex "^(,)")
 
 
 nor : String -> Model -> String
 nor string model =
     regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(nor)"))
-
-
-not : String -> Model -> String
-not string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(not)"))
 
 
 and : String -> Model -> String
@@ -209,23 +165,8 @@ space string model =
                     ""
 
 
-tokenize : String -> (String -> Model -> String) -> Model -> ParsedToken
-tokenize string tokenizer model =
-    let
-        result =
-            tokenizer string model
-
-        resultLength =
-            String.length result
-    in
-    if resultLength == 0 then
-        ParsedToken "" -1
-    else
-        ParsedToken result resultLength
-
-
-process : String -> Model -> TokenState -> List TokenState -> Dict String String -> TokenState -> List Token
-process string model state queue loopDetectionDict parentState =
+process : String -> Model -> TokenState -> List TokenState -> Dict String String -> TokenState -> Int -> ( List Token, List TokenState )
+process string model state queue loopDetectionDict parentState position =
     let
         -- string neither exists or not equals in the loopDetectionDict
         newMapping =
@@ -233,80 +174,83 @@ process string model state queue loopDetectionDict parentState =
     in
     case state of
         CommaTerm ->
-            return string model state comma queue newMapping parentState
+            return string model state comma queue newMapping parentState position
 
         CloseParenthesisInOperatorTerm ->
-            return string model state closeParenthesis queue newMapping parentState
+            return string model state closeParenthesis queue newMapping parentState position
 
         OpenParenthesisInOperatorTerm ->
-            return string model state openParenthesis queue newMapping parentState
+            return string model state openParenthesis queue newMapping parentState position
 
         CloseParenthesisTerm ->
-            return string model state closeParenthesis queue newMapping parentState
+            return string model state closeParenthesis queue newMapping parentState position
 
         OpenParenthesisTerm ->
-            return string model state openParenthesis queue newMapping parentState
-
-        InTerm ->
-            return string model state inTerm queue newMapping parentState
+            return string model state openParenthesis queue newMapping parentState position
 
         SpaceTerm ->
-            return string model state space queue newMapping parentState
+            return string model state space queue newMapping parentState position
 
         WordTerm ->
-            return string model state word queue newMapping parentState
+            return string model state word queue newMapping parentState position
 
         KeywordTerm ->
-            return string model state keyword queue newMapping parentState
+            return string model state keyword queue newMapping parentState position
 
         UnknownKeywordTerm ->
-            return string model state unknownKeyword queue newMapping parentState
+            return string model state unknownKeyword queue newMapping parentState position
 
         StartQuoteTerm ->
-            return string model state startQuote queue newMapping parentState
+            return string model state startQuote queue newMapping parentState position
 
         EndQuoteTerm ->
-            return string model state endQuote queue newMapping parentState
+            return string model state endQuote queue newMapping parentState position
 
         AndTerm ->
-            return string model state and queue newMapping parentState
+            return string model state and queue newMapping parentState position
 
         OrTerm ->
-            return string model state or queue newMapping parentState
+            return string model state or queue newMapping parentState position
 
         EitherOrTerm ->
-            return string model state or queue newMapping parentState
+            return string model state or queue newMapping parentState position
 
-        NorTerm ->
-            return string model state nor queue newMapping parentState
-
-        NotTerm ->
-            return string model state not queue newMapping parentState
+        NeitherNorTerm ->
+            return string model state nor queue newMapping parentState position
 
         IsTerm ->
-            return string model state is queue newMapping parentState
+            return string model state is queue newMapping parentState position
 
-        EitherTerm ->
-            return string model state either queue newMapping parentState
+        IsNotTerm ->
+            return string model state isNot queue newMapping parentState position
 
-        NeitherTerm ->
-            return string model state neither queue newMapping parentState
+        IsInTerm ->
+            return string model state isIn queue newMapping parentState position
+
+        IsNotInTerm ->
+            return string model state isNotIn queue newMapping parentState position
+
+        IsEitherTerm ->
+            return string model state isEither queue newMapping parentState position
+
+        IsNeitherTerm ->
+            return string model state isNeither queue newMapping parentState position
 
         _ ->
-            walk string model queue newMapping state
+            walk string model queue newMapping state position
 
 
-walk : String -> Model -> List TokenState -> Dict String String -> TokenState -> List Token
-walk string model queue loopDetectionDict parentState =
+walk : String -> Model -> List TokenState -> Dict String String -> TokenState -> Int -> ( List Token, List TokenState )
+walk string model queue loopDetectionDict parentState position =
     -- empty string means we finished parsing
     if string == "" then
-        []
+        ( [], queue )
     else
         -- assess queue of upcoming states
         case queue of
             -- is queue is empty it means we finished parsing
             [] ->
-                []
+                ( [], queue )
 
             -- process first state
             state :: rest ->
@@ -322,22 +266,24 @@ walk string model queue loopDetectionDict parentState =
                     -- get previous state of the entry when we were in this state
                     previousString =
                         Dict.get (toString state) loopDetectionDict
-
-                    --                    a =
-                    --                        Debug.log (toString state) rest
                 in
                 case previousString of
                     Nothing ->
                         -- proceed if string does not exist
-                        process string model state newStatesQueue loopDetectionDict parentState
+                        process string model state newStatesQueue loopDetectionDict parentState position
 
                     Just previousString ->
                         if previousString == string then
                             -- if both strings are equal - we are inside infinite loop - try to move to the next state
-                            walk string model rest loopDetectionDict state
+                            walk string model rest loopDetectionDict state position
                         else
                             -- strings are different - there is a chance that we might on a correct branch
-                            process string model state newStatesQueue loopDetectionDict parentState
+                            process string model state newStatesQueue loopDetectionDict parentState position
+
+
+isTermState : TokenState -> Bool
+isTermState state =
+    List.length (getPossibleStates state) == 0
 
 
 getPossibleStates : TokenState -> List TokenState
@@ -356,87 +302,107 @@ getPossibleStates state =
             [ OpenParenthesisTerm, SpaceTerm, OperatorGroup, SpaceTerm, CloseParenthesisTerm, SpaceTerm, Conjunction ]
 
         OperatorGroup ->
-            [ KeywordTerm, SpaceTerm, Operator ]
+            [ KeywordTerm, SpaceTerm, TokenOperator ]
 
-        Operator ->
-            [ IsOperator ]
+        TokenOperator ->
+            [ IsEitherOperator, IsNeitherOperator, IsNotInOperator, IsInOperator, IsNotOperator, IsOperator ]
 
         IsOperator ->
-            [ IsTerm, SpaceTerm, EitherOrOperator, NeitherNorOperator, NotTerm, SpaceTerm, InOperator, SpaceTerm, Value ]
+            [ IsTerm, SpaceTerm, TokenValue ]
 
-        InOperator ->
-            [ InTerm, Statement, OpenParenthesisInOperatorTerm, InValue, CloseParenthesisInOperatorTerm ]
+        IsNotOperator ->
+            [ IsNotTerm, SpaceTerm, TokenValue ]
 
-        EitherOrOperator ->
-            [ EitherTerm, SpaceTerm, Value, SpaceTerm, EitherOrTerm, SpaceTerm, Value ]
+        IsInOperator ->
+            [ IsInTerm, Statement, OpenParenthesisInOperatorTerm, InValue, CloseParenthesisInOperatorTerm ]
 
-        NeitherNorOperator ->
-            [ NeitherTerm, SpaceTerm, Value, SpaceTerm, NorTerm, SpaceTerm, Value ]
+        IsNotInOperator ->
+            [ IsNotInTerm, Statement, OpenParenthesisInOperatorTerm, InValue, CloseParenthesisInOperatorTerm ]
 
-        Value ->
-            [ WordTerm, MultiQuotedWord ]
+        IsEitherOperator ->
+            [ IsEitherTerm, SpaceTerm, TokenValue, SpaceTerm, EitherOrTerm, SpaceTerm, TokenValue ]
+
+        IsNeitherOperator ->
+            [ IsNeitherTerm, SpaceTerm, TokenValue, SpaceTerm, NeitherNorTerm, SpaceTerm, TokenValue ]
 
         InValue ->
-            [ SpaceTerm, CommaTerm, SpaceTerm, Value, InValue ]
+            [ SpaceTerm, TokenValue, CommaTerm, SpaceTerm, InValue ]
+
+        TokenValue ->
+            [ SingleWord, MultiQuotedWord ]
+
+        SingleWord ->
+            [ WordTerm ]
 
         MultiQuotedWord ->
             [ StartQuoteTerm, Statement, EndQuoteTerm ]
 
         Conjunction ->
-            [ SpaceTerm, OrTerm, AndTerm, WordTerm, Conjunction ]
+            [ OrConjunction, AndConjunction ]
+
+        OrConjunction ->
+            [ OrTerm ]
+
+        AndConjunction ->
+            [ AndTerm ]
 
         _ ->
             []
 
 
-return : String -> Model -> TokenState -> (String -> Model -> String) -> List TokenState -> Dict String String -> TokenState -> List Token
-return string model state tokenizer queue newMapping parentState =
+return : String -> Model -> TokenState -> (String -> Model -> String) -> List TokenState -> Dict String String -> TokenState -> Int -> ( List Token, List TokenState )
+return string model state tokenizer queue newMapping parentState position =
     let
         result =
-            tokenize string tokenizer model
+            tokenizer string model
+
+        resultLength =
+            String.length result
+
+        newPosition =
+            position + resultLength
 
         newQueue =
             \n q -> List.drop n q
     in
-    if result.length == -1 then
+    if result == "" then
         case state of
             OpenParenthesisInOperatorTerm ->
-                let
-                    numberOfStatesToDrop =
-                        if parentState == Criterion then
-                            1
-                        else
-                            2
-                in
-                walk string model (newQueue numberOfStatesToDrop queue) newMapping parentState
+                walk string model (newQueue 2 queue) newMapping parentState newPosition
 
             KeywordTerm ->
-                walk string model (UnknownKeywordTerm :: queue) newMapping parentState
+                walk string model (UnknownKeywordTerm :: queue) newMapping parentState newPosition
 
             StartQuoteTerm ->
-                walk string model (newQueue 2 queue) newMapping parentState
-
-            EitherTerm ->
-                walk string model (newQueue 6 queue) newMapping parentState
-
-            NeitherTerm ->
-                walk string model (newQueue 6 queue) newMapping parentState
+                walk string model (newQueue 2 queue) newMapping parentState newPosition
 
             IsTerm ->
-                walk string model (newQueue 8 queue) newMapping parentState
+                walk string model (newQueue 2 queue) newMapping parentState newPosition
 
-            InTerm ->
-                walk string model (newQueue 4 queue) newMapping parentState
+            IsNotTerm ->
+                walk string model (newQueue 2 queue) newMapping parentState newPosition
+
+            IsInTerm ->
+                walk string model (newQueue 4 queue) newMapping parentState newPosition
+
+            IsNotInTerm ->
+                walk string model (newQueue 4 queue) newMapping parentState newPosition
+
+            IsEitherTerm ->
+                walk string model (newQueue 6 queue) newMapping parentState newPosition
+
+            IsNeitherTerm ->
+                walk string model (newQueue 6 queue) newMapping parentState newPosition
 
             _ ->
-                walk string model queue newMapping parentState
+                walk string model queue newMapping parentState newPosition
     else
         let
             newString =
-                String.slice result.length (String.length string) string
+                String.slice resultLength (String.length string) string
 
             token =
-                [ Token state result ]
+                [ Token state result position ]
 
             dropAhead n q =
                 let
@@ -450,23 +416,57 @@ return string model state tokenizer queue newMapping parentState =
         in
         case state of
             OrTerm ->
-                token ++ walk newString model (newQueue 3 queue) newMapping parentState
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (newQueue 1 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
 
-            AndTerm ->
-                token ++ walk newString model (newQueue 2 queue) newMapping parentState
+            WordTerm ->
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (newQueue 1 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
 
-            CloseParenthesisInOperatorTerm ->
-                -- remove IsOperator after is in() closing bracket
-                token ++ walk newString model (newQueue 1 queue) newMapping parentState
+            IsEitherTerm ->
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (dropAhead 5 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
 
-            EitherTerm ->
-                token ++ walk newString model (dropAhead 6 queue) newMapping parentState
+            IsNeitherTerm ->
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (dropAhead 4 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
 
-            NeitherTerm ->
-                token ++ walk newString model (dropAhead 5 queue) newMapping parentState
+            IsNotInTerm ->
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (dropAhead 3 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
 
-            InTerm ->
-                token ++ walk newString model (dropAhead 2 queue) newMapping parentState
+            IsInTerm ->
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (dropAhead 2 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
+
+            IsNotTerm ->
+                let
+                    ( result, remainingStates ) =
+                        walk newString model (dropAhead 1 queue) newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )
 
             _ ->
-                token ++ walk newString model queue newMapping parentState
+                let
+                    ( result, remainingStates ) =
+                        walk newString model queue newMapping parentState newPosition
+                in
+                ( token ++ result, remainingStates )

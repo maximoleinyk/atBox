@@ -1,9 +1,9 @@
 module Lexer_1_5_2 exposing (..)
 
 import Expect
-import Lexer exposing (LexemeType(..), LexerState(..))
+import GlobalTypes exposing (LexemeType(..), OperatorType(..))
+import Lexer
 import MockModel exposing (getDefaultModel)
-import OperatorType exposing (OperatorType(..))
 import Test exposing (Test, describe, test)
 import Tokenizer
 
@@ -22,25 +22,70 @@ suite =
                         model =
                             getDefaultModel
 
-                        tokens =
+                        ( tokens, remainingStates ) =
                             Tokenizer.run testCase model
                     in
                     Expect.equal (Lexer.run tokens model)
-                        [ { lexemeType = Field, value = "@forename" }
-                        , { lexemeType = Operator IsType, value = "is" }
-                        , { lexemeType = Value, value = "Maksym" }
-                        , { lexemeType = Joiner, value = "and" }
-                        , { lexemeType = Field, value = "@surname" }
-                        , { lexemeType = Operator IsEitherType, value = "either" }
-                        , { lexemeType = Value, value = " Ivanov or Petrov " }
-                        , { lexemeType = Joiner, value = "or" }
-                        , { lexemeType = Field, value = "@forename" }
-                        , { lexemeType = Operator IsType, value = "is" }
-                        , { lexemeType = Value, value = "Viktor" }
-                        , { lexemeType = Joiner, value = "and" }
-                        , { lexemeType = Field, value = "@surname" }
-                        , { lexemeType = Operator IsNeitherType, value = "neither" }
-                        , { lexemeType = Value, value = " Sokolov nor Smirnov" }
+                        [ { lexemeType = Field
+                          , value = "@forename"
+                          , index = 0
+                          }
+                        , { lexemeType = Operator IsType
+                          , value = "is"
+                          , index = 10
+                          }
+                        , { lexemeType = LexemeValue
+                          , value = "Maksym"
+                          , index = 13
+                          }
+                        , { lexemeType = Joiner
+                          , value = "and"
+                          , index = 20
+                          }
+                        , { lexemeType = Field
+                          , value = "@surname"
+                          , index = 24
+                          }
+                        , { lexemeType = Operator IsEitherType
+                          , value = "is either"
+                          , index = 33
+                          }
+                        , { lexemeType = LexemeValue
+                          , value = " Ivanov or Petrov "
+                          , index = 42
+                          }
+                        , { lexemeType = Joiner
+                          , value = "or"
+                          , index = 60
+                          }
+                        , { lexemeType = Field
+                          , value = "@forename"
+                          , index = 63
+                          }
+                        , { lexemeType = Operator IsType
+                          , value = "is"
+                          , index = 73
+                          }
+                        , { lexemeType = LexemeValue
+                          , value = "Viktor"
+                          , index = 76
+                          }
+                        , { lexemeType = Joiner
+                          , value = "and"
+                          , index = 83
+                          }
+                        , { lexemeType = Field
+                          , value = "@surname"
+                          , index = 87
+                          }
+                        , { lexemeType = Operator IsNeitherType
+                          , value = "is neither"
+                          , index = 96
+                          }
+                        , { lexemeType = LexemeValue
+                          , value = " Sokolov nor Smirnov"
+                          , index = 106
+                          }
                         ]
             ]
         ]

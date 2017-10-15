@@ -1,9 +1,10 @@
 module Case_1_3_2 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,72 +17,46 @@ suite =
         [ describe "is neither"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@forename"
-                                , length = 9
-                                }
+                          , value = "@forename"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 9
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsNeitherTerm
+                          , value = "is neither"
+                          , index = 10
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = NeitherTerm
-                          , parsedToken =
-                                { string = "neither"
-                                , length = 7
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 20
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 21
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 27
                           }
-                        , { state = NorTerm
-                          , parsedToken =
-                                { string = "nor"
-                                , length = 3
-                                }
+                        , { state = NeitherNorTerm
+                          , value = "nor"
+                          , index = 28
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 31
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Viktor"
-                                , length = 6
-                                }
+                          , value = "Viktor"
+                          , index = 32
                           }
                         ]
             ]

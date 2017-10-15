@@ -1,9 +1,10 @@
 module Case_1_2_1 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,48 +17,30 @@ suite =
         [ describe "is not"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@name"
-                                , length = 5
-                                }
+                          , value = "@name"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 5
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsNotTerm
+                          , value = "is not"
+                          , index = 6
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = NotTerm
-                          , parsedToken =
-                                { string = "not"
-                                , length = 3
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 12
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 13
                           }
                         ]
             ]

@@ -1,9 +1,10 @@
 module Case_1_1_7 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,42 +17,34 @@ suite =
         [ describe "is"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = WordTerm
-                          , parsedToken =
-                                { string = "find"
-                                , length = 4
-                                }
+                          , value = "find"
+                          , index = 0
                           }
                         , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@name"
-                                , length = 5
-                                }
+                          , value = "@name"
+                          , index = 4
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 9
                           }
                         , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                          , value = "is"
+                          , index = 10
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 12
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 13
                           }
                         ]
             ]

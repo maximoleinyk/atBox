@@ -1,9 +1,8 @@
 module Lexer_1_1_5 exposing (..)
 
 import Expect
-import Lexer exposing (LexemeType(..), LexerState(..))
+import Lexer
 import MockModel exposing (getDefaultModel)
-import OperatorType exposing (OperatorType(..))
 import Test exposing (Test, describe, test)
 import Tokenizer
 
@@ -22,7 +21,7 @@ suite =
                         model =
                             getDefaultModel
 
-                        tokens =
+                        ( tokens, remainingStates ) =
                             Tokenizer.run testCase model
                     in
                     Expect.equal (Lexer.run tokens model)

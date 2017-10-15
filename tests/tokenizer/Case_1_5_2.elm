@@ -1,9 +1,10 @@
 module Case_1_5_2 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,252 +17,158 @@ suite =
         [ describe "or"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@forename"
-                                , length = 9
-                                }
+                          , value = "@forename"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 9
                           }
                         , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                          , value = "is"
+                          , index = 10
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 12
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 13
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 19
                           }
                         , { state = AndTerm
-                          , parsedToken =
-                                { string = "and"
-                                , length = 3
-                                }
+                          , value = "and"
+                          , index = 20
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 23
                           }
                         , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@surname"
-                                , length = 8
-                                }
+                          , value = "@surname"
+                          , index = 24
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 32
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsEitherTerm
+                          , value = "is either"
+                          , index = 33
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = EitherTerm
-                          , parsedToken =
-                                { string = "either"
-                                , length = 6
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 42
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Ivanov"
-                                , length = 6
-                                }
+                          , value = "Ivanov"
+                          , index = 43
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 49
                           }
                         , { state = EitherOrTerm
-                          , parsedToken =
-                                { string = "or"
-                                , length = 2
-                                }
+                          , value = "or"
+                          , index = 50
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 52
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Petrov"
-                                , length = 6
-                                }
+                          , value = "Petrov"
+                          , index = 53
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 59
                           }
                         , { state = OrTerm
-                          , parsedToken =
-                                { string = "or"
-                                , length = 2
-                                }
+                          , value = "or"
+                          , index = 60
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 62
                           }
                         , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@forename"
-                                , length = 9
-                                }
+                          , value = "@forename"
+                          , index = 63
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 72
                           }
                         , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                          , value = "is"
+                          , index = 73
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 75
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Viktor"
-                                , length = 6
-                                }
+                          , value = "Viktor"
+                          , index = 76
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 82
                           }
                         , { state = AndTerm
-                          , parsedToken =
-                                { string = "and"
-                                , length = 3
-                                }
+                          , value = "and"
+                          , index = 83
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 86
                           }
                         , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@surname"
-                                , length = 8
-                                }
+                          , value = "@surname"
+                          , index = 87
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 95
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsNeitherTerm
+                          , value = "is neither"
+                          , index = 96
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = NeitherTerm
-                          , parsedToken =
-                                { string = "neither"
-                                , length = 7
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 106
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Sokolov"
-                                , length = 7
-                                }
+                          , value = "Sokolov"
+                          , index = 107
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 114
                           }
-                        , { state = NorTerm
-                          , parsedToken =
-                                { string = "nor"
-                                , length = 3
-                                }
+                        , { state = NeitherNorTerm
+                          , value = "nor"
+                          , index = 115
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 118
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Smirnov"
-                                , length = 7
-                                }
+                          , value = "Smirnov"
+                          , index = 119
                           }
                         ]
             ]

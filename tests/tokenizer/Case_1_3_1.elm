@@ -1,9 +1,10 @@
 module Case_1_3_1 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,72 +17,46 @@ suite =
         [ describe "is either"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@forename"
-                                , length = 9
-                                }
+                          , value = "@forename"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 9
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsEitherTerm
+                          , value = "is either"
+                          , index = 10
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = EitherTerm
-                          , parsedToken =
-                                { string = "either"
-                                , length = 6
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 19
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 20
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 26
                           }
                         , { state = EitherOrTerm
-                          , parsedToken =
-                                { string = "or"
-                                , length = 2
-                                }
+                          , value = "or"
+                          , index = 27
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 29
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Viktor"
-                                , length = 6
-                                }
+                          , value = "Viktor"
+                          , index = 30
                           }
                         ]
             ]

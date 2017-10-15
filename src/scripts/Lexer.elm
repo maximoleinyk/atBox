@@ -1,39 +1,8 @@
-module Lexer exposing (Lexeme, LexemeType(..), LexerState, run)
+module Lexer exposing (run)
 
 import Dict exposing (Dict)
-import Model exposing (Model)
-import OperatorType exposing (OperatorType(..))
+import GlobalTypes exposing (Lexeme, LexemeType(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis), LexerState(..), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
 import Regex
-import Tokenizer exposing (Token, TokenState(..))
-
-
-type LexerState
-    = START
-    | JOIN_TERM
-    | EXPRESSION
-    | OPEN_PARENTHESIS_TERM
-    | CLOSE_PARENTHESIS_TERM
-    | OPERATOR_GROUP
-    | FIELD_TERM
-    | OPERATOR_TERM
-    | VALUE_TERM
-    | OPEN_PARENTHESIS
-    | CLOSE_PARENTHESIS
-
-
-type LexemeType
-    = Field
-    | Operator OperatorType
-    | Value
-    | Joiner
-    | LeftParenthesis
-    | RightParenthesis
-
-
-type alias Lexeme =
-    { lexemeType : LexemeType
-    , value : String
-    }
 
 
 getNextStates : LexerState -> List LexerState
@@ -99,19 +68,27 @@ parseMultiQuotedWord tokens model =
                     []
 
 
-parseSingleValue : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseSingleValue tokens model =
+parseSingleValue : List Token -> Model -> Int -> Int -> ( List Token, Maybe Lexeme, Int )
+parseSingleValue tokens model initialPosition endValuePosition =
+    let
+        nothing =
+            ( tokens, Nothing, endValuePosition )
+    in
     case tokens of
         [] ->
-            ( tokens, Just (Lexeme Value "") )
+            nothing
 
         first :: rest ->
+            let
+                newPosition =
+                    endValuePosition + String.length first.value
+            in
             case first.state of
                 SpaceTerm ->
-                    parseSingleValue rest model
+                    parseSingleValue rest model newPosition newPosition
 
                 WordTerm ->
-                    ( rest, Just (Lexeme Value first.parsedToken.string) )
+                    ( rest, Just (Lexeme LexemeValue first.value initialPosition), newPosition )
 
                 StartQuoteTerm ->
                     let
@@ -120,7 +97,7 @@ parseSingleValue tokens model =
                             parseMultiQuotedWord tokens model
 
                         getString =
-                            \token -> token.parsedToken.string
+                            \token -> token.value
 
                         stringResult =
                             String.join "" (List.map getString result)
@@ -130,81 +107,98 @@ parseSingleValue tokens model =
 
                         newTokens =
                             List.drop (List.length result) tokens
+
+                        -- including quotes "  some   value "
+                        newPosition =
+                            endValuePosition + String.length stringResult
                     in
                     if List.length newTokens == List.length tokens then
-                        -- syntax error
-                        ( tokens, Nothing )
+                        nothing
                     else
-                        ( newTokens, Just (Lexeme Value withoutQuotes) )
+                        ( newTokens, Just (Lexeme LexemeValue withoutQuotes initialPosition), newPosition )
 
                 _ ->
-                    -- parser cannot recognize input text
-                    ( tokens, Nothing )
+                    nothing
 
 
-parseValueForEitherOrNeitherOperator : List Token -> Model -> String -> ( List Token, Maybe Lexeme )
-parseValueForEitherOrNeitherOperator tokens model resultString =
+parseValueForEitherOrNeitherOperator : List Token -> Model -> String -> Int -> Int -> ( List Token, Maybe Lexeme, Int )
+parseValueForEitherOrNeitherOperator tokens model resultString initialPosition endValuePosition =
     let
         returnResult =
             if String.length resultString == 0 then
-                ( tokens, Nothing )
+                ( tokens, Nothing, initialPosition )
             else
-                ( tokens, Just (Lexeme Value resultString) )
+                ( tokens, Just (Lexeme LexemeValue resultString initialPosition), endValuePosition )
     in
     case tokens of
         [] ->
             returnResult
 
         first :: rest ->
+            let
+                newPosition =
+                    endValuePosition + String.length first.value
+            in
             case first.state of
                 SpaceTerm ->
-                    parseValueForEitherOrNeitherOperator rest model (resultString ++ first.parsedToken.string)
+                    parseValueForEitherOrNeitherOperator rest model (resultString ++ first.value) initialPosition newPosition
 
                 WordTerm ->
                     let
-                        ( newTokens, lexeme ) =
-                            parseSingleValue tokens model
+                        ( newTokens, lexeme, newPosition ) =
+                            parseSingleValue tokens model initialPosition endValuePosition
                     in
                     case lexeme of
                         Nothing ->
-                            parseValueForEitherOrNeitherOperator tokens model resultString
+                            parseValueForEitherOrNeitherOperator tokens model resultString initialPosition newPosition
 
                         Just result ->
-                            parseValueForEitherOrNeitherOperator newTokens model (resultString ++ result.value)
+                            parseValueForEitherOrNeitherOperator newTokens model (resultString ++ result.value) initialPosition newPosition
 
                 StartQuoteTerm ->
                     let
-                        ( newTokens, lexeme ) =
-                            parseSingleValue tokens model
+                        ( newTokens, lexeme, newPosition ) =
+                            parseSingleValue tokens model initialPosition initialPosition
                     in
                     case lexeme of
                         Nothing ->
-                            parseValueForEitherOrNeitherOperator tokens model resultString
+                            parseValueForEitherOrNeitherOperator tokens model resultString initialPosition newPosition
 
                         Just result ->
-                            parseValueForEitherOrNeitherOperator newTokens model (resultString ++ result.value)
+                            parseValueForEitherOrNeitherOperator newTokens model (resultString ++ result.value) initialPosition newPosition
 
                 EitherOrTerm ->
-                    parseValueForEitherOrNeitherOperator rest model (resultString ++ first.parsedToken.string)
+                    let
+                        newPosition =
+                            endValuePosition + String.length first.value
+                    in
+                    parseValueForEitherOrNeitherOperator rest model (resultString ++ first.value) initialPosition newPosition
 
-                NorTerm ->
-                    parseValueForEitherOrNeitherOperator rest model (resultString ++ first.parsedToken.string)
+                NeitherNorTerm ->
+                    let
+                        newPosition =
+                            endValuePosition + String.length first.value
+                    in
+                    parseValueForEitherOrNeitherOperator rest model (resultString ++ first.value) initialPosition newPosition
 
                 _ ->
                     returnResult
 
 
-parseMultiValue : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseMultiValue tokens model =
+parseMultiValue : List Token -> Model -> Int -> Int -> ( List Token, Maybe Lexeme, Int )
+parseMultiValue tokens model initialPosition endValuePosition =
     case tokens of
         [] ->
-            ( tokens, Just (Lexeme Value "") )
+            ( tokens, Just (Lexeme LexemeValue "" initialPosition), endValuePosition )
 
         nextToken :: restTokens ->
             case nextToken.state of
                 SpaceTerm ->
-                    -- skip any spaces
-                    parseMultiValue restTokens model
+                    let
+                        newPosition =
+                            endValuePosition + String.length nextToken.value
+                    in
+                    parseMultiValue restTokens model initialPosition newPosition
 
                 OpenParenthesisInOperatorTerm ->
                     let
@@ -213,30 +207,33 @@ parseMultiValue tokens model =
                             parseCommaSeparatedValues tokens model
 
                         getString =
-                            \token -> token.parsedToken.string
+                            \token -> token.value
 
                         stringResult =
                             String.join "" (List.map getString result)
 
                         newTokens =
                             List.drop (List.length result) tokens
+
+                        newPosition =
+                            endValuePosition + String.length stringResult
                     in
                     if List.length newTokens == List.length tokens then
                         -- syntax error
-                        ( tokens, Nothing )
+                        ( tokens, Nothing, initialPosition )
                     else
-                        ( newTokens, Just (Lexeme Value stringResult) )
+                        ( newTokens, Just (Lexeme LexemeValue stringResult initialPosition), newPosition )
 
                 _ ->
                     -- parser cannot recognize input
-                    ( tokens, Nothing )
+                    ( tokens, Nothing, initialPosition )
 
 
-parseValue : List Token -> Model -> Maybe Lexeme -> ( List Token, Maybe Lexeme )
-parseValue tokens model previousLexeme =
+parseValue : List Token -> Model -> Maybe Lexeme -> Int -> ( List Token, Maybe Lexeme, Int )
+parseValue tokens model previousLexeme position =
     let
         nothing =
-            ( tokens, Nothing )
+            ( tokens, Nothing, position )
     in
     if List.length tokens == 0 then
         nothing
@@ -255,33 +252,33 @@ parseValue tokens model previousLexeme =
                         -- order is important here cannot use "case of" operator
                         if operatorType == IsEitherType || operatorType == IsNeitherType then
                             let
-                                ( newTokens, lexeme ) =
-                                    parseValueForEitherOrNeitherOperator tokens model ""
+                                ( newTokens, lexeme, newPosition ) =
+                                    parseValueForEitherOrNeitherOperator tokens model "" position position
                             in
                             case lexeme of
                                 Nothing ->
                                     nothing
 
                                 Just result ->
-                                    ( newTokens, lexeme )
+                                    ( newTokens, lexeme, newPosition )
                         else if operatorType == IsInType || operatorType == IsNotInType then
                             let
-                                ( newTokens, lexeme ) =
-                                    parseMultiValue tokens model
+                                ( newTokens, lexeme, newPosition ) =
+                                    parseMultiValue tokens model position position
                             in
                             if lexeme == Nothing then
                                 nothing
                             else
-                                ( newTokens, lexeme )
+                                ( newTokens, lexeme, newPosition )
                         else if operatorType == IsType || operatorType == IsNotType then
                             let
-                                ( newTokens, lexeme ) =
-                                    parseSingleValue tokens model
+                                ( newTokens, lexeme, newPosition ) =
+                                    parseSingleValue tokens model position position
                             in
                             if lexeme == Nothing then
                                 nothing
                             else
-                                ( newTokens, lexeme )
+                                ( newTokens, lexeme, newPosition )
                         else
                             nothing
 
@@ -289,165 +286,151 @@ parseValue tokens model previousLexeme =
                         nothing
 
 
-parseField : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseField tokens model =
+parseField : List Token -> Model -> Int -> ( List Token, Maybe Lexeme, Int )
+parseField tokens model position =
     case tokens of
         [] ->
             -- no tokens left - return nothing
-            ( tokens, Nothing )
+            ( tokens, Nothing, position )
 
         first :: rest ->
+            let
+                newPosition =
+                    position + String.length first.value
+            in
             case first.state of
                 KeywordTerm ->
                     -- success - we found a keyword
-                    ( rest, Just (Lexeme Field first.parsedToken.string) )
+                    ( rest, Just (Lexeme Field first.value position), newPosition )
 
                 SpaceTerm ->
                     -- if we encounter space - skip it and take next token
-                    parseField rest model
+                    parseField rest model newPosition
 
                 WordTerm ->
-                    parseField rest model
+                    parseField rest model newPosition
 
                 _ ->
                     -- couldn't parse field
-                    ( tokens, Nothing )
+                    ( tokens, Nothing, newPosition )
 
 
-parseCloseParenthesis : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseCloseParenthesis tokens model =
+parseCloseParenthesis : List Token -> Model -> Int -> ( List Token, Maybe Lexeme, Int )
+parseCloseParenthesis tokens model position =
     case tokens of
         [] ->
-            ( tokens, Nothing )
+            ( tokens, Nothing, position )
 
         first :: rest ->
+            let
+                newPosition =
+                    position + String.length first.value
+            in
             case first.state of
                 SpaceTerm ->
-                    parseCloseParenthesis rest model
+                    parseCloseParenthesis rest model newPosition
 
                 CloseParenthesisTerm ->
-                    ( rest, Just (Lexeme RightParenthesis first.parsedToken.string) )
+                    ( rest, Just (Lexeme RightParenthesis first.value position), newPosition )
 
                 _ ->
-                    ( tokens, Nothing )
+                    ( tokens, Nothing, position )
 
 
-parseOpenParenthesis : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseOpenParenthesis tokens model =
+parseOpenParenthesis : List Token -> Model -> Int -> ( List Token, Maybe Lexeme, Int )
+parseOpenParenthesis tokens model position =
     case tokens of
         [] ->
-            ( tokens, Nothing )
+            ( tokens, Nothing, position )
 
         first :: rest ->
+            let
+                newPosition =
+                    position + String.length first.value
+            in
             case first.state of
                 SpaceTerm ->
-                    parseOpenParenthesis rest model
+                    parseOpenParenthesis rest model newPosition
 
                 OpenParenthesisTerm ->
-                    ( rest, Just (Lexeme LeftParenthesis first.parsedToken.string) )
+                    ( rest, Just (Lexeme LeftParenthesis first.value position), newPosition )
 
                 _ ->
-                    ( tokens, Nothing )
+                    ( tokens, Nothing, position )
 
 
-parseJoin : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseJoin tokens model =
+parseJoin : List Token -> Model -> Int -> ( List Token, Maybe Lexeme, Int )
+parseJoin tokens model position =
     case tokens of
         [] ->
-            ( tokens, Nothing )
+            ( tokens, Nothing, position )
 
         first :: rest ->
+            let
+                newPosition =
+                    position + String.length first.value
+            in
             case first.state of
                 OrTerm ->
-                    ( rest, Just (Lexeme Joiner first.parsedToken.string) )
+                    ( rest, Just (Lexeme Joiner first.value position), newPosition )
 
                 AndTerm ->
-                    ( rest, Just (Lexeme Joiner first.parsedToken.string) )
+                    ( rest, Just (Lexeme Joiner first.value position), newPosition )
 
                 WordTerm ->
-                    parseJoin rest model
+                    parseJoin rest model newPosition
 
                 SpaceTerm ->
-                    parseJoin rest model
+                    parseJoin rest model newPosition
 
                 _ ->
-                    ( tokens, Nothing )
+                    ( tokens, Nothing, position )
 
 
-parseIsSubOperator : List Token -> Model -> String -> ( List Token, Maybe Lexeme )
-parseIsSubOperator tokens model resultString =
-    if List.length tokens == 0 then
-        ( tokens, Nothing )
-    else
-        case tokens of
-            [] ->
-                ( tokens, Nothing )
+parseOperator : List Token -> Model -> Int -> Int -> ( List Token, Maybe Lexeme, Int )
+parseOperator tokens model initPosition endOperatorPosition =
+    let
+        nothing =
+            ( tokens, Nothing, initPosition )
+    in
+    case tokens of
+        [] ->
+            nothing
 
-            nextToken :: restTokens ->
-                case nextToken.state of
-                    SpaceTerm ->
-                        parseIsSubOperator restTokens model resultString
+        nextToken :: restTokens ->
+            let
+                newPosition =
+                    endOperatorPosition + String.length nextToken.value
+            in
+            case nextToken.state of
+                SpaceTerm ->
+                    parseOperator restTokens model newPosition newPosition
 
-                    InTerm ->
-                        ( restTokens, Just (Lexeme (Operator IsInType) (resultString ++ nextToken.parsedToken.string)) )
+                IsTerm ->
+                    ( restTokens, Just (Lexeme (Operator IsType) nextToken.value initPosition), newPosition )
 
-                    EitherTerm ->
-                        ( restTokens, Just (Lexeme (Operator IsEitherType) (resultString ++ nextToken.parsedToken.string)) )
+                IsNotTerm ->
+                    ( restTokens, Just (Lexeme (Operator IsNotType) nextToken.value initPosition), newPosition )
 
-                    NeitherTerm ->
-                        ( restTokens, Just (Lexeme (Operator IsNeitherType) (resultString ++ nextToken.parsedToken.string)) )
+                IsInTerm ->
+                    ( restTokens, Just (Lexeme (Operator IsInType) nextToken.value initPosition), newPosition )
 
-                    NotTerm ->
-                        let
-                            ( newTokens, lexeme ) =
-                                parseIsSubOperator restTokens model resultString
-                        in
-                        case lexeme of
-                            Nothing ->
-                                -- there is nothing lower than "is not" there
-                                ( restTokens, Just (Lexeme (Operator IsNotType) (resultString ++ nextToken.parsedToken.string)) )
+                IsNotInTerm ->
+                    ( restTokens, Just (Lexeme (Operator IsNotInType) nextToken.value initPosition), newPosition )
 
-                            Just l ->
-                                -- take newTokens here that InTerm returned "is not in" and result value from lexeme
-                                ( newTokens, Just (Lexeme (Operator IsNotInType) l.value) )
+                IsEitherTerm ->
+                    ( restTokens, Just (Lexeme (Operator IsEitherType) nextToken.value initPosition), newPosition )
 
-                    _ ->
-                        ( tokens, Nothing )
+                IsNeitherTerm ->
+                    ( restTokens, Just (Lexeme (Operator IsNeitherType) nextToken.value initPosition), newPosition )
 
-
-parseOperator : List Token -> Model -> ( List Token, Maybe Lexeme )
-parseOperator tokens model =
-    if List.length tokens == 0 then
-        ( tokens, Nothing )
-    else
-        case tokens of
-            [] ->
-                ( tokens, Nothing )
-
-            nextToken :: restTokens ->
-                case nextToken.state of
-                    SpaceTerm ->
-                        parseOperator restTokens model
-
-                    IsTerm ->
-                        let
-                            ( newTokens, lexeme ) =
-                                parseIsSubOperator restTokens model ""
-                        in
-                        if lexeme == Nothing then
-                            -- no sub operators just return "Is" operator
-                            ( restTokens, Just (Lexeme (Operator IsType) nextToken.parsedToken.string) )
-                        else
-                            -- return one of sub operators with new token set
-                            ( newTokens, lexeme )
-
-                    _ ->
-                        -- unreachable expression
-                        ( tokens, Nothing )
+                _ ->
+                    -- unreachable expression
+                    nothing
 
 
-process : List Token -> Model -> LexerState -> List LexerState -> Dict String Int -> Maybe Lexeme -> List Lexeme
-process tokens model state queue loopDetectionDict previousLexeme =
+process : List Token -> Model -> LexerState -> List LexerState -> Dict String Int -> Maybe Lexeme -> Int -> List Lexeme
+process tokens model state queue loopDetectionDict previousLexeme position =
     let
         tokensLength =
             List.length tokens
@@ -461,20 +444,20 @@ process tokens model state queue loopDetectionDict previousLexeme =
     case state of
         JOIN_TERM ->
             let
-                ( newTokens, lexeme ) =
-                    parseJoin tokens model
+                ( newTokens, lexeme, newPosition ) =
+                    parseJoin tokens model position
             in
             case lexeme of
                 Nothing ->
-                    walk newTokens model queue newMapping previousLexeme
+                    walk newTokens model queue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme)
+                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
 
         OPEN_PARENTHESIS_TERM ->
             let
-                ( newTokens, lexeme ) =
-                    parseOpenParenthesis tokens model
+                ( newTokens, lexeme, newPosition ) =
+                    parseOpenParenthesis tokens model position
             in
             case lexeme of
                 Nothing ->
@@ -483,15 +466,15 @@ process tokens model state queue loopDetectionDict previousLexeme =
                         newQueue =
                             List.drop 1 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme
+                    walk newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme)
+                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
 
         FIELD_TERM ->
             let
-                ( newTokens, lexeme ) =
-                    parseField tokens model
+                ( newTokens, lexeme, newPosition ) =
+                    parseField tokens model position
             in
             case lexeme of
                 Nothing ->
@@ -500,21 +483,18 @@ process tokens model state queue loopDetectionDict previousLexeme =
                            if we couldn't parse FIELD term there is no point of parsing
                            next OPERATOR and VALUE terms that come after
                         -}
-                        numberOfStatesAfterFieldTerm =
-                            2
-
                         newQueue =
-                            List.drop numberOfStatesAfterFieldTerm queue
+                            List.drop 2 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme
+                    walk newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme)
+                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
 
         OPERATOR_TERM ->
             let
-                ( newTokens, lexeme ) =
-                    parseOperator tokens model
+                ( newTokens, lexeme, newPosition ) =
+                    parseOperator tokens model position position
             in
             case lexeme of
                 Nothing ->
@@ -523,33 +503,30 @@ process tokens model state queue loopDetectionDict previousLexeme =
                            if we couldn't parse FIELD term there is no point of parsing
                            next OPERATOR and VALUE terms that come after
                         -}
-                        numberOfStatesAfterValueTerm =
-                            1
-
                         newQueue =
-                            List.drop numberOfStatesAfterValueTerm queue
+                            List.drop 1 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme
+                    walk newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme)
+                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
 
         VALUE_TERM ->
             let
-                ( newTokens, lexeme ) =
-                    parseValue tokens model previousLexeme
+                ( newTokens, lexeme, newPosition ) =
+                    parseValue tokens model previousLexeme position
             in
             case lexeme of
                 Nothing ->
-                    walk newTokens model queue newMapping previousLexeme
+                    walk newTokens model queue newMapping previousLexeme position
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme)
+                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
 
         CLOSE_PARENTHESIS_TERM ->
             let
-                ( newTokens, lexeme ) =
-                    parseCloseParenthesis tokens model
+                ( newTokens, lexeme, newPosition ) =
+                    parseCloseParenthesis tokens model position
             in
             case lexeme of
                 Nothing ->
@@ -558,17 +535,17 @@ process tokens model state queue loopDetectionDict previousLexeme =
                         newQueue =
                             List.drop 1 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme
+                    walk newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme)
+                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
 
         _ ->
-            walk tokens model queue newMapping previousLexeme
+            walk tokens model queue newMapping previousLexeme position
 
 
-walk : List Token -> Model -> List LexerState -> Dict String Int -> Maybe Lexeme -> List Lexeme
-walk tokens model queue loopDetectionDict previousLexeme =
+walk : List Token -> Model -> List LexerState -> Dict String Int -> Maybe Lexeme -> Int -> List Lexeme
+walk tokens model queue loopDetectionDict previousLexeme position =
     if List.length tokens == 0 then
         []
     else
@@ -595,22 +572,19 @@ walk tokens model queue loopDetectionDict previousLexeme =
 
                     currentLength =
                         List.length tokens
-
-                    --                    a =
-                    --                        Debug.log (toString state) newStatesQueue
                 in
                 case previousLength of
                     Nothing ->
                         -- proceed if record does not exist
-                        process tokens model state newStatesQueue loopDetectionDict previousLexeme
+                        process tokens model state newStatesQueue loopDetectionDict previousLexeme position
 
                     Just previousLength ->
                         if previousLength == currentLength then
                             -- if both lengths are equal - we are inside infinite loop - try to move to the next state
-                            walk tokens model rest loopDetectionDict previousLexeme
+                            walk tokens model rest loopDetectionDict previousLexeme position
                         else
                             -- lengths are different - there is a chance that we might on a correct branch
-                            process tokens model state newStatesQueue loopDetectionDict previousLexeme
+                            process tokens model state newStatesQueue loopDetectionDict previousLexeme position
 
 
 run : List Token -> Model -> List Lexeme
@@ -622,4 +596,4 @@ run tokens model =
         loopDetection =
             Dict.empty
     in
-    walk tokens model [ initialState ] loopDetection Nothing
+    walk tokens model [ initialState ] loopDetection Nothing 0

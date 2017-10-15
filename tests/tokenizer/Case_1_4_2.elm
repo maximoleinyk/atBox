@@ -1,9 +1,10 @@
 module Case_1_4_2 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,108 +17,74 @@ suite =
         [ describe "and"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@age"
-                                , length = 4
-                                }
+                          , value = "@age"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 4
                           }
                         , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                          , value = "is"
+                          , index = 5
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 7
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "26"
-                                , length = 2
-                                }
+                          , value = "26"
+                          , index = 8
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 10
                           }
                         , { state = AndTerm
-                          , parsedToken =
-                                { string = "and"
-                                , length = 3
-                                }
+                          , value = "and"
+                          , index = 11
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 14
                           }
                         , { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@name"
-                                , length = 5
-                                }
+                          , value = "@name"
+                          , index = 15
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 20
                           }
                         , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                          , value = "is"
+                          , index = 21
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 23
                           }
                         , { state = StartQuoteTerm
-                          , parsedToken =
-                                { string = "\""
-                                , length = 1
-                                }
+                          , value = "\""
+                          , index = 24
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 25
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 31
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Oliinyk"
-                                , length = 7
-                                }
-                          }
-                        , { state = EndQuoteTerm
-                          , parsedToken =
-                                { string = "\""
-                                , length = 1
-                                }
+                          , value = "Oliinyk"
+                          , index = 32
                           }
                         ]
             ]

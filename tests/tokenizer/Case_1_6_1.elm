@@ -1,9 +1,10 @@
 module Case_1_6_1 exposing (..)
 
 import Expect
+import GlobalTypes exposing (TokenState(..))
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
-import Tokenizer exposing (TokenState(..))
+import Tokenizer
 
 
 suite : Test
@@ -16,78 +17,50 @@ suite =
         [ describe "in"
             [ test testCase <|
                 \_ ->
-                    Expect.equal (Tokenizer.run testCase getDefaultModel)
+                    let
+                        ( tokens, remainingStates ) =
+                            Tokenizer.run testCase getDefaultModel
+                    in
+                    Expect.equal tokens
                         [ { state = KeywordTerm
-                          , parsedToken =
-                                { string = "@forename"
-                                , length = 9
-                                }
+                          , value = "@forename"
+                          , index = 0
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 9
                           }
-                        , { state = IsTerm
-                          , parsedToken =
-                                { string = "is"
-                                , length = 2
-                                }
+                        , { state = IsInTerm
+                          , value = "is in"
+                          , index = 10
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
-                          }
-                        , { state = InTerm
-                          , parsedToken =
-                                { string = "in"
-                                , length = 2
-                                }
-                          }
-                        , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 15
                           }
                         , { state = OpenParenthesisInOperatorTerm
-                          , parsedToken =
-                                { string = "("
-                                , length = 1
-                                }
+                          , value = "("
+                          , index = 16
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Maksym"
-                                , length = 6
-                                }
+                          , value = "Maksym"
+                          , index = 17
                           }
                         , { state = CommaTerm
-                          , parsedToken =
-                                { string = ","
-                                , length = 1
-                                }
+                          , value = ","
+                          , index = 23
                           }
                         , { state = SpaceTerm
-                          , parsedToken =
-                                { string = " "
-                                , length = 1
-                                }
+                          , value = " "
+                          , index = 24
                           }
                         , { state = WordTerm
-                          , parsedToken =
-                                { string = "Viktor"
-                                , length = 6
-                                }
+                          , value = "Viktor"
+                          , index = 25
                           }
                         , { state = CloseParenthesisInOperatorTerm
-                          , parsedToken =
-                                { string = ")"
-                                , length = 1
-                                }
+                          , value = ")"
+                          , index = 31
                           }
                         ]
             ]

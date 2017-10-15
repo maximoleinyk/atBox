@@ -1,8 +1,6 @@
-module Parser exposing (AST(..), run)
+module Parser exposing (run)
 
-import Lexer exposing (Lexeme, LexemeType(Field, Joiner, LeftParenthesis, Operator, RightParenthesis, Value))
-import Model exposing (Model)
-import OperatorType exposing (OperatorType)
+import GlobalTypes exposing (AST(..), Lexeme, LexemeType(..), Model)
 
 
 type Term
@@ -12,16 +10,6 @@ type Term
     | OrOperator
     | OpenParenthesis
     | CloseParenthesis
-
-
-type AST
-    = Node
-        { left : AST
-        , value : String
-        , right : AST
-        }
-    | Leaf String
-    | Null
 
 
 processRightParenthesis : Lexeme -> Model -> List Term -> List Lexeme -> List Term
@@ -218,7 +206,7 @@ buildExpressionTree lexemes model stack =
                 Operator operatorType ->
                     processOperator nextLexeme model stack restLexemes
 
-                Value ->
+                LexemeValue ->
                     processValue nextLexeme model stack restLexemes
 
                 Joiner ->
