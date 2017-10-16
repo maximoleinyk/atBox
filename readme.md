@@ -1,5 +1,5 @@
 # Demo
-![](https://github.com/maximoleinyk/atBox/master/resources/demo.gif)
+![](https://github.com/maximoleinyk/atBox/blob/master/resources/demo.gif)
 
 # Specification
              
