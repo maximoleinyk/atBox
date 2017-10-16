@@ -2,10 +2,10 @@ module Update exposing (..)
 
 import ContextAnalyzer
 import Dom
-import Encoders exposing (encodeFsmResponse, encodeLexemes, encodeTokens)
-import GlobalTypes exposing (AST, CursorContext, FsmResponse, Lexeme, Model, Msg(Blur, Focus, FocusResult, GetCursorPosition, Parse, SelectHighlightedValue, UpdateCursorPosition, UpdateValue), Token, TokenState, TranslatorOutput)
+import Encoders exposing (encodeFsmResponse, encodeLexemes, encodeTokens, encodeTranslatorOutput, encodeValue)
+import GlobalTypes exposing (AST, CursorContext, FsmResponse, Lexeme, Model, Msg(Blur, EnterKeyPressed, Focus, FocusResult, GetCursorPosition, Parse, SelectHighlightedValue, UpdateCursorPosition, UpdateValue), Token, TokenState, TranslatorOutput)
 import Html.Attributes exposing (id)
-import Json.Encode exposing (object, string)
+import Json.Encode exposing (encode, object, string)
 import Lexer
 import Parser
 import Ports exposing (..)
@@ -125,6 +125,16 @@ update msg model =
 
                 Ok () ->
                     update (UpdateCursorPosition model.cursorIndex) model
+
+        EnterKeyPressed ->
+            let
+                ( result, context ) =
+                    parse model
+
+                command =
+                    emitDataOnEnterKey (encodeValue (encodeTranslatorOutput result.output))
+            in
+            ( { model | context = context }, command )
 
         _ ->
             ( model, Cmd.none )

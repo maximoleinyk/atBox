@@ -4,6 +4,9 @@ port module Ports exposing (..)
 port emitData : String -> Cmd msg
 
 
+port emitDataOnEnterKey : String -> Cmd msg
+
+
 port getCursorPosition : String -> Cmd msg
 
 

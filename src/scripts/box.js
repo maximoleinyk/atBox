@@ -1,4 +1,15 @@
-;!(function(self) {
+(function (root, factory) {
+  "use strict";
+  
+  if (typeof define === 'function' && define.amd) {
+    define([], factory);
+  } else if (typeof exports === 'object') {
+    module.exports = factory();
+  } else {
+    root.box = factory();
+  }
+  
+}(this, function () {
   "use strict";
   
   // only for IE
@@ -15,13 +26,16 @@
     Math.abs(document.selection.createRange().moveStart("character", -1000000));
   }
   
-  self.box = function(config) {
+  return function (config) {
     const nodes = document.querySelectorAll(config.root);
-    const onChange = config.onChange || function() {};
+    const onChange = config.onChange || function () {
+    };
+    const onEnter = config.onEnter || function () {
+    };
     const queryFields = config.queryFields || [];
-    const normalizedQueryFields = queryFields.map(function(queryField) {
+    const normalizedQueryFields = queryFields.map(function (queryField) {
       if (queryField.fieldType !== 'enum' || queryField.fieldType === 'enum' && !queryField.values) {
-          queryField.values = [];
+        queryField.values = [];
       }
       return queryField;
     });
@@ -38,17 +52,21 @@
         queryFields: normalizedQueryFields,
         placeholder: 'Click here and start typing'
       }, config || {}));
-  
-      component.ports.getCursorPosition.subscribe(function() {
+      
+      component.ports.getCursorPosition.subscribe(function () {
         const input = document.querySelector(config.root + ' input');
         const caretPosition = getCaretPosition(input);
         component.ports.setCursorPosition.send(caretPosition);
       });
       
-      component.ports.emitData.subscribe(function(output) {
+      component.ports.emitData.subscribe(function (output) {
         onChange(JSON.parse(output));
+      });
+      
+      component.ports.emitDataOnEnterKey.subscribe(function (translatorOutput) {
+        onEnter(JSON.parse(translatorOutput))
       });
     });
   };
   
-}(window));
+}));
