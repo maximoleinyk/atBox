@@ -1,16 +1,70 @@
 module Translator exposing (run)
 
-import GlobalTypes exposing (AST(..), Model, TranslatorOutput(..))
+import GlobalTypes exposing (AST(..), Model, OutputOperatorType(..), OutputValueType(..), TranslatorOutput(..), TranslatorOutputValueType(Multiple, None, Single))
 
 
-getLeafValue : AST -> String -> String
-getLeafValue node operator =
+getOutputOperatorType : OutputOperatorType -> String
+getOutputOperatorType t =
+    case t of
+        IsOperatorType ->
+            "=="
+
+        IsNotOperatorType ->
+            "!="
+
+        IsEitherOperatorType ->
+            "in"
+
+        IsNeitherOperatorType ->
+            "not in"
+
+        IsInOperatorType ->
+            "in"
+
+        IsNotInOperatorType ->
+            "not in"
+
+        OrOperatorType ->
+            "||"
+
+        AndOperatorType ->
+            "&&"
+
+        NoOutputType ->
+            ""
+
+
+getKeywordValue : AST -> String
+getKeywordValue node =
     case node of
-        Leaf value ->
-            value
+        Leaf outputValueType ->
+            case outputValueType of
+                SingleValue string ->
+                    string
+
+                _ ->
+                    ""
 
         _ ->
             ""
+
+
+getValue : AST -> TranslatorOutputValueType
+getValue node =
+    case node of
+        Leaf outputValueType ->
+            case outputValueType of
+                SingleValue value ->
+                    Single value
+
+                MultipleValues list ->
+                    Multiple (List.map (\i -> String.trim i) list)
+
+                NoValue ->
+                    None
+
+        _ ->
+            None
 
 
 walk : AST -> Model -> TranslatorOutput -> TranslatorOutput
@@ -25,22 +79,16 @@ walk root model output =
 
         Node node ->
             let
-                isAnd =
-                    node.value == "and"
-
-                isOr =
-                    node.value == "or"
-
                 isLeaf =
-                    not isAnd && not isOr
+                    node.value /= AndOperatorType && node.value /= OrOperatorType
             in
             if isLeaf then
                 let
                     result =
                         EndOutput
-                            { field = getLeafValue node.left node.value
-                            , operator = node.value
-                            , value = getLeafValue node.right node.value
+                            { field = getKeywordValue node.left
+                            , operator = getOutputOperatorType node.value
+                            , value = getValue node.right
                             }
                 in
                 case output of
@@ -60,7 +108,7 @@ walk root model output =
                     result =
                         [ walk node.left model NoOutput ] ++ [ walk node.right model NoOutput ]
                 in
-                if isOr then
+                if node.value == OrOperatorType then
                     OrOutput { or = result }
                 else
                     AndOutput { and = result }

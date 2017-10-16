@@ -1,6 +1,7 @@
 module Parser exposing (run)
 
-import GlobalTypes exposing (AST(..), Lexeme, LexemeType(..), Model)
+import GlobalTypes exposing (AST(..), Lexeme, LexemeState(..), Model, OperatorType(..), OutputOperatorType(..), OutputValueType(MultipleValues, NoValue, SingleValue))
+import Utils
 
 
 type Term
@@ -199,7 +200,7 @@ buildExpressionTree lexemes model stack =
             stack
 
         nextLexeme :: restLexemes ->
-            case nextLexeme.lexemeType of
+            case nextLexeme.state of
                 Field ->
                     processField nextLexeme model stack restLexemes
 
@@ -269,30 +270,8 @@ optimizeStack stack memo =
                     rest
 
 
-convertTermToString : Term -> String
-convertTermToString term =
-    case term of
-        Expression terms ->
-            toString terms
-
-        Operand lexeme ->
-            lexeme.value
-
-        AndOperator ->
-            "and"
-
-        OrOperator ->
-            "or"
-
-        OpenParenthesis ->
-            "("
-
-        CloseParenthesis ->
-            ")"
-
-
-traverseTree : List Term -> AST
-traverseTree stack =
+traverseTree : List Term -> Model -> AST
+traverseTree stack model =
     case stack of
         [] ->
             Null
@@ -301,7 +280,7 @@ traverseTree stack =
             case x of
                 Expression items ->
                     -- [ Expression [ Expression [...] ] unwrap to Expression [...]
-                    traverseTree items
+                    traverseTree items model
 
                 _ ->
                     -- x is not an expression
@@ -310,23 +289,164 @@ traverseTree stack =
         x :: y :: [] ->
             -- [Expression, AndJoiner] - drop joiner
             -- [Expression, OrJoiner] - drop joiner
-            traverseTree [ x ]
+            traverseTree [ x ] model
 
         x :: y :: z :: _ ->
-            if y == AndOperator || y == OrOperator then
+            case y of
                 -- [ Expression Joiner Expression ]
-                Node
-                    { left = traverseTree [ x ]
-                    , value = convertTermToString y
-                    , right = traverseTree [ z ]
-                    }
-            else
+                AndOperator ->
+                    Node
+                        { left = traverseTree [ x ] model
+                        , value = AndOperatorType
+                        , right = traverseTree [ z ] model
+                        }
+
+                -- [ Expression Joiner Expression ]
+                OrOperator ->
+                    Node
+                        { left = traverseTree [ x ] model
+                        , value = OrOperatorType
+                        , right = traverseTree [ z ] model
+                        }
+
                 -- [ Item Operator Item ]
-                Node
-                    { left = Leaf (convertTermToString x)
-                    , value = convertTermToString y
-                    , right = Leaf (convertTermToString z)
-                    }
+                Operand lexeme ->
+                    let
+                        operator =
+                            convertOperator lexeme.state
+                    in
+                    Node
+                        { left = Leaf (convertKeyword x model)
+                        , value = operator
+                        , right = Leaf (convertValue z operator)
+                        }
+
+                -- unreachable
+                _ ->
+                    Null
+
+
+convertValue : Term -> OutputOperatorType -> OutputValueType
+convertValue term operatorType =
+    case term of
+        Operand lexeme ->
+            case lexeme.state of
+                LexemeValue ->
+                    case operatorType of
+                        IsOperatorType ->
+                            SingleValue (String.trim lexeme.value)
+
+                        IsNotOperatorType ->
+                            SingleValue (String.trim lexeme.value)
+
+                        IsEitherOperatorType ->
+                            let
+                                values =
+                                    String.trim lexeme.value
+
+                                newValues =
+                                    if String.length values == 0 then
+                                        []
+                                    else
+                                        String.split " or " values
+                            in
+                            MultipleValues newValues
+
+                        IsNeitherOperatorType ->
+                            let
+                                values =
+                                    String.trim lexeme.value
+
+                                newValues =
+                                    if String.length values == 0 then
+                                        []
+                                    else
+                                        String.split " nor " values
+                            in
+                            MultipleValues newValues
+
+                        IsInOperatorType ->
+                            let
+                                values =
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "(" ""
+                                        |> Utils.replace ")" ""
+
+                                newValues =
+                                    if String.length values == 0 then
+                                        []
+                                    else
+                                        String.split "," values
+                            in
+                            MultipleValues newValues
+
+                        IsNotInOperatorType ->
+                            let
+                                values =
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "(" ""
+                                        |> Utils.replace ")" ""
+
+                                newValues =
+                                    if String.length values == 0 then
+                                        []
+                                    else
+                                        String.split "," values
+                            in
+                            MultipleValues newValues
+
+                        _ ->
+                            NoValue
+
+                _ ->
+                    NoValue
+
+        _ ->
+            NoValue
+
+
+convertKeyword : Term -> Model -> OutputValueType
+convertKeyword term model =
+    case term of
+        Operand lexeme ->
+            case lexeme.state of
+                Field ->
+                    SingleValue (Utils.replace model.keywordDelimiter "" lexeme.value)
+
+                _ ->
+                    NoValue
+
+        _ ->
+            NoValue
+
+
+convertOperator : LexemeState -> OutputOperatorType
+convertOperator lexemeState =
+    case lexemeState of
+        Operator operatorType ->
+            case operatorType of
+                IsType ->
+                    IsOperatorType
+
+                IsNotType ->
+                    IsNotOperatorType
+
+                IsEitherType ->
+                    IsEitherOperatorType
+
+                IsNeitherType ->
+                    IsNeitherOperatorType
+
+                IsInType ->
+                    IsInOperatorType
+
+                IsNotInType ->
+                    IsNotInOperatorType
+
+        _ ->
+            NoOutputType
 
 
 run : List Lexeme -> Model -> AST
@@ -339,6 +459,6 @@ run lexemes model =
             optimizeStack stack []
 
         result =
-            traverseTree singleRoot
+            traverseTree singleRoot model
     in
     result

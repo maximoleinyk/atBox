@@ -1,7 +1,7 @@
 module Lexer_1_4_1 exposing (..)
 
 import Expect
-import GlobalTypes exposing (LexemeType(Field, Joiner, LexemeValue, Operator), OperatorType(IsNotType, IsType))
+import GlobalTypes exposing (LexemeState(Field, Joiner, LexemeValue, Operator), OperatorType(IsNotType, IsType))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
@@ -26,39 +26,39 @@ suite =
                             Tokenizer.run testCase model
                     in
                     Expect.equal (Lexer.run tokens model)
-                        [ { lexemeType = Field
+                        [ { state = Field
                           , value = "@forename"
                           , index = 0
                           }
-                        , { lexemeType = Operator IsType
+                        , { state = Operator IsType
                           , value = "is"
                           , index = 10
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = "Maksym"
                           , index = 13
                           }
-                        , { lexemeType = Joiner
+                        , { state = Joiner
                           , value = "and"
                           , index = 20
                           }
-                        , { lexemeType = Field
+                        , { state = Field
                           , value = "@surname"
                           , index = 24
                           }
-                        , { lexemeType = Joiner
+                        , { state = Joiner
                           , value = "and"
                           , index = 41
                           }
-                        , { lexemeType = Field
+                        , { state = Field
                           , value = "@age"
                           , index = 45
                           }
-                        , { lexemeType = Operator IsType
+                        , { state = Operator IsType
                           , value = "is"
                           , index = 50
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = "26"
                           , index = 53
                           }

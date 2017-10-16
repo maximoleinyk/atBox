@@ -7,7 +7,7 @@ module Encoders
         , encodeTranslatorOutput
         )
 
-import GlobalTypes exposing (AST(..), FsmResponse, Lexeme, Token, TokenState, TranslatorOutput(..))
+import GlobalTypes exposing (AST(..), FsmResponse, Lexeme, OutputOperatorType(..), OutputValueType(..), Token, TokenState, TranslatorOutput(..), TranslatorOutputValueType(..))
 import Json.Encode exposing (Value, encode, int, list, null, object, string)
 
 
@@ -18,7 +18,7 @@ encodeAst =
             Node node ->
                 object
                     [ ( "left", encodeAst node.left )
-                    , ( "value", string node.value )
+                    , ( "value", encodeNodeValue node.value )
                     , ( "right", encodeAst node.right )
                     ]
 
@@ -27,6 +27,44 @@ encodeAst =
 
             Null ->
                 null
+
+
+encodeNodeValue : OutputOperatorType -> Value
+encodeNodeValue outputOperatorValue =
+    let
+        convertedValue =
+            case outputOperatorValue of
+                IsOperatorType ->
+                    "="
+
+                IsNotOperatorType ->
+                    "!="
+
+                IsEitherOperatorType ->
+                    "in"
+
+                IsNeitherOperatorType ->
+                    "not in"
+
+                IsInOperatorType ->
+                    "in"
+
+                IsNotInOperatorType ->
+                    "not in"
+
+                OrOperatorType ->
+                    "||"
+
+                AndOperatorType ->
+                    "&&"
+
+                NoOutputType ->
+                    ""
+
+        result =
+            string convertedValue
+    in
+    result
 
 
 encodeFsmResponse : FsmResponse -> String
@@ -64,7 +102,7 @@ encodeLexemes =
             f =
                 \l ->
                     object
-                        [ ( "lexemeType", encodeToString l.lexemeType )
+                        [ ( "state", encodeToString l.state )
                         , ( "value", string l.value )
                         , ( "index", int l.index )
                         ]
@@ -83,6 +121,19 @@ encodeTranslatorOutputs =
                 [ encodeTranslatorOutput next ] ++ encodeTranslatorOutputs rest
 
 
+encodeTranslatorOutputValue : TranslatorOutputValueType -> Value
+encodeTranslatorOutputValue value =
+    case value of
+        Single v ->
+            string v
+
+        Multiple l ->
+            list (List.map (\i -> string i) l)
+
+        None ->
+            null
+
+
 encodeTranslatorOutput : TranslatorOutput -> Value
 encodeTranslatorOutput =
     \output ->
@@ -99,7 +150,7 @@ encodeTranslatorOutput =
                 object
                     [ ( "field", string output.field )
                     , ( "operator", string output.operator )
-                    , ( "value", string output.value )
+                    , ( "value", encodeTranslatorOutputValue output.value )
                     ]
 
             NoOutput ->

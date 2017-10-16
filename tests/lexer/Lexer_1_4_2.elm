@@ -1,7 +1,7 @@
 module Lexer_1_4_2 exposing (..)
 
 import Expect
-import GlobalTypes exposing (LexemeType(Field, Joiner, LexemeValue, Operator), OperatorType(IsNotType, IsType))
+import GlobalTypes exposing (LexemeState(Field, Joiner, LexemeValue, Operator), OperatorType(IsNotType, IsType))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
@@ -26,31 +26,31 @@ suite =
                             Tokenizer.run testCase model
                     in
                     Expect.equal (Lexer.run tokens model)
-                        [ { lexemeType = Field
+                        [ { state = Field
                           , value = "@age"
                           , index = 0
                           }
-                        , { lexemeType = Operator IsType
+                        , { state = Operator IsType
                           , value = "is"
                           , index = 5
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = "26"
                           , index = 8
                           }
-                        , { lexemeType = Joiner
+                        , { state = Joiner
                           , value = "and"
                           , index = 11
                           }
-                        , { lexemeType = Field
+                        , { state = Field
                           , value = "@name"
                           , index = 15
                           }
-                        , { lexemeType = Operator IsType
+                        , { state = Operator IsType
                           , value = "is"
                           , index = 21
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = "Maksym Oliinyk"
                           , index = 24
                           }

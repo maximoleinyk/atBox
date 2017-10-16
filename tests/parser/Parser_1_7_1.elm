@@ -1,7 +1,7 @@
 module Parser_1_7_1 exposing (..)
 
 import Expect
-import GlobalTypes exposing (AST(..))
+import GlobalTypes exposing (AST(..), OutputOperatorType(IsInOperatorType, IsNotInOperatorType, OrOperatorType), OutputValueType(MultipleValues, SingleValue))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Parser
@@ -33,16 +33,16 @@ suite =
                         (Node
                             { left =
                                 Node
-                                    { left = Leaf "@forename"
-                                    , value = "is in"
-                                    , right = Leaf "(Maksym, Viktor)"
+                                    { left = Leaf (SingleValue "forename")
+                                    , value = IsInOperatorType
+                                    , right = Leaf (MultipleValues [ "Maksym", " Viktor" ])
                                     }
-                            , value = "or"
+                            , value = OrOperatorType
                             , right =
                                 Node
-                                    { left = Leaf "@forename"
-                                    , value = "is not in"
-                                    , right = Leaf "(Alex, Julia)"
+                                    { left = Leaf (SingleValue "forename")
+                                    , value = IsNotInOperatorType
+                                    , right = Leaf (MultipleValues [ "Alex", " Julia" ])
                                     }
                             }
                         )

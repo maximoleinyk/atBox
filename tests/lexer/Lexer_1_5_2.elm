@@ -1,7 +1,7 @@
 module Lexer_1_5_2 exposing (..)
 
 import Expect
-import GlobalTypes exposing (LexemeType(..), OperatorType(..))
+import GlobalTypes exposing (LexemeState(..), OperatorType(..))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Test exposing (Test, describe, test)
@@ -26,63 +26,63 @@ suite =
                             Tokenizer.run testCase model
                     in
                     Expect.equal (Lexer.run tokens model)
-                        [ { lexemeType = Field
+                        [ { state = Field
                           , value = "@forename"
                           , index = 0
                           }
-                        , { lexemeType = Operator IsType
+                        , { state = Operator IsType
                           , value = "is"
                           , index = 10
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = "Maksym"
                           , index = 13
                           }
-                        , { lexemeType = Joiner
+                        , { state = Joiner
                           , value = "and"
                           , index = 20
                           }
-                        , { lexemeType = Field
+                        , { state = Field
                           , value = "@surname"
                           , index = 24
                           }
-                        , { lexemeType = Operator IsEitherType
+                        , { state = Operator IsEitherType
                           , value = "is either"
                           , index = 33
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = " Ivanov or Petrov "
                           , index = 42
                           }
-                        , { lexemeType = Joiner
+                        , { state = Joiner
                           , value = "or"
                           , index = 60
                           }
-                        , { lexemeType = Field
+                        , { state = Field
                           , value = "@forename"
                           , index = 63
                           }
-                        , { lexemeType = Operator IsType
+                        , { state = Operator IsType
                           , value = "is"
                           , index = 73
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = "Viktor"
                           , index = 76
                           }
-                        , { lexemeType = Joiner
+                        , { state = Joiner
                           , value = "and"
                           , index = 83
                           }
-                        , { lexemeType = Field
+                        , { state = Field
                           , value = "@surname"
                           , index = 87
                           }
-                        , { lexemeType = Operator IsNeitherType
+                        , { state = Operator IsNeitherType
                           , value = "is neither"
                           , index = 96
                           }
-                        , { lexemeType = LexemeValue
+                        , { state = LexemeValue
                           , value = " Sokolov nor Smirnov"
                           , index = 106
                           }

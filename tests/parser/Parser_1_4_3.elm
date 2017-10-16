@@ -1,7 +1,7 @@
 module Parser_1_4_3 exposing (..)
 
 import Expect
-import GlobalTypes exposing (AST(..))
+import GlobalTypes exposing (AST(..), OutputOperatorType(AndOperatorType, IsEitherOperatorType, IsOperatorType), OutputValueType(MultipleValues, SingleValue))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Parser
@@ -33,16 +33,16 @@ suite =
                         (Node
                             { left =
                                 Node
-                                    { left = Leaf "@forename"
-                                    , value = "is"
-                                    , right = Leaf "Maksym"
+                                    { left = Leaf (SingleValue "forename")
+                                    , value = IsOperatorType
+                                    , right = Leaf (SingleValue "Maksym")
                                     }
-                            , value = "and"
+                            , value = AndOperatorType
                             , right =
                                 Node
-                                    { left = Leaf "@surname"
-                                    , value = "is either"
-                                    , right = Leaf " Ivanov or Petrov"
+                                    { left = Leaf (SingleValue "surname")
+                                    , value = IsEitherOperatorType
+                                    , right = Leaf (MultipleValues [ "Ivanov", "Petrov" ])
                                     }
                             }
                         )

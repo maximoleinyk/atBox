@@ -1,7 +1,7 @@
 module Parser_1_2_4 exposing (..)
 
 import Expect
-import GlobalTypes exposing (AST(..))
+import GlobalTypes exposing (AST(..), OutputOperatorType(IsNotOperatorType), OutputValueType(SingleValue))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Parser
@@ -31,9 +31,9 @@ suite =
                     in
                     Expect.equal (Parser.run lexemes model)
                         (Node
-                            { left = Leaf "@name"
-                            , value = "is not"
-                            , right = Leaf "Maksym Oliinyk"
+                            { left = Leaf (SingleValue "name")
+                            , value = IsNotOperatorType
+                            , right = Leaf (SingleValue "Maksym Oliinyk")
                             }
                         )
             ]

@@ -1,7 +1,7 @@
 module Lexer exposing (run)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (Lexeme, LexemeType(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis), LexerState(..), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
+import GlobalTypes exposing (Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis), LexerState(..), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
 import Regex
 
 
@@ -244,10 +244,10 @@ parseValue tokens model previousLexeme position =
 
             Just previousLexeme ->
                 let
-                    lexemeType =
-                        previousLexeme.lexemeType
+                    state =
+                        previousLexeme.state
                 in
-                case lexemeType of
+                case state of
                     Operator operatorType ->
                         -- order is important here cannot use "case of" operator
                         if operatorType == IsEitherType || operatorType == IsNeitherType then

@@ -5,15 +5,18 @@ module GlobalTypes
         , CursorContext(..)
         , FsmResponse
         , Lexeme
-        , LexemeType(..)
+        , LexemeState(..)
         , LexerState(..)
         , Model
         , Msg(..)
         , OperatorType(..)
+        , OutputOperatorType(..)
+        , OutputValueType(..)
         , QueryField
         , Token
         , TokenState(..)
         , TranslatorOutput(..)
+        , TranslatorOutputValueType(..)
         , ValueType(..)
         )
 
@@ -21,13 +24,23 @@ import Dict exposing (Dict)
 import Dom
 
 
+type TranslatorOutputValueType
+    = Single String
+    | Multiple (List String)
+    | None
+
+
 type TranslatorOutput
-    = AndOutput { and : List TranslatorOutput }
-    | OrOutput { or : List TranslatorOutput }
+    = AndOutput
+        { and : List TranslatorOutput
+        }
+    | OrOutput
+        { or : List TranslatorOutput
+        }
     | EndOutput
         { field : String
         , operator : String
-        , value : String
+        , value : TranslatorOutputValueType
         }
     | NoOutput
 
@@ -78,13 +91,31 @@ type Msg
     | FocusResult (Result Dom.Error ())
 
 
+type OutputOperatorType
+    = IsOperatorType
+    | IsNotOperatorType
+    | IsEitherOperatorType
+    | IsNeitherOperatorType
+    | IsInOperatorType
+    | IsNotInOperatorType
+    | OrOperatorType
+    | AndOperatorType
+    | NoOutputType
+
+
+type OutputValueType
+    = SingleValue String
+    | MultipleValues (List String)
+    | NoValue
+
+
 type AST
     = Node
         { left : AST
-        , value : String
+        , value : OutputOperatorType
         , right : AST
         }
-    | Leaf String
+    | Leaf OutputValueType
     | Null
 
 
@@ -145,7 +176,7 @@ type LexerState
     | CLOSE_PARENTHESIS
 
 
-type LexemeType
+type LexemeState
     = Field
     | Operator OperatorType
     | LexemeValue
@@ -170,7 +201,7 @@ type alias Token =
 
 
 type alias Lexeme =
-    { lexemeType : LexemeType
+    { state : LexemeState
     , value : String
     , index : Int
     }

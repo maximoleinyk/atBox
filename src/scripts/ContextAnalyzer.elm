@@ -1,7 +1,7 @@
 module ContextAnalyzer exposing (run, run2)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (CursorContext(..), Lexeme, LexemeType(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(..), ValueType(ValueStringType))
+import GlobalTypes exposing (CursorContext(..), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(..), ValueType(ValueStringType))
 import Regex exposing (HowMany(All))
 import Tokenizer
 import Utils
@@ -268,7 +268,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                             processKeywordContext model queryString
 
                         Just lexeme ->
-                            case lexeme.lexemeType of
+                            case lexeme.state of
                                 -- "... and @| "
                                 Joiner ->
                                     processKeywordContext model queryString
@@ -292,7 +292,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                             NoContext
 
                         Just lexeme ->
-                            case lexeme.lexemeType of
+                            case lexeme.state of
                                 -- "@name word|
                                 Field ->
                                     processOperatorsContext queryString
@@ -315,7 +315,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                             processKeywordContext model queryString
 
                         Just lexeme ->
-                            case lexeme.lexemeType of
+                            case lexeme.state of
                                 -- "@name  |
                                 Field ->
                                     processOperatorsContext ""
@@ -336,7 +336,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                                                 NoContext
 
                                             Just lexeme ->
-                                                case lexeme.lexemeType of
+                                                case lexeme.state of
                                                     Operator t ->
                                                         processValue lexeme token t
 
@@ -390,7 +390,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                             NoContext
 
                         Just lexeme ->
-                            case lexeme.lexemeType of
+                            case lexeme.state of
                                 -- "@name is in|
                                 -- "@name is not in|
                                 Field ->
@@ -431,7 +431,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                             NoContext
 
                         Just lexeme ->
-                            case lexeme.lexemeType of
+                            case lexeme.state of
                                 -- "@name is Max or|
                                 LexemeValue ->
                                     processJoinerContext originalString queryString
@@ -450,7 +450,7 @@ getContext lexemes originalString token lexeme cursorPosition model =
                             NoContext
 
                         Just lexeme ->
-                            case lexeme.lexemeType of
+                            case lexeme.state of
                                 -- "@name is Max and|
                                 LexemeValue ->
                                     processJoinerContext originalString queryString
@@ -697,7 +697,7 @@ getContext2 nextTokenState token lexemeBeforeToken nextPossibleTokenStates model
                 convertedOperators =
                     convertOperators nextPossibleTokenStates Dict.empty
             in
-            case lexemeBefore.lexemeType of
+            case lexemeBefore.state of
                 Field ->
                     OperatorContext convertedOperators tokenValue
 

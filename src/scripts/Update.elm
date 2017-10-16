@@ -62,9 +62,6 @@ update msg model =
                     output =
                         getTranslatorOutput ast model
 
-                    a =
-                        Debug.log "" output
-
                     fsmResponse =
                         FsmResponse tokens lexemes ast output ""
                 in

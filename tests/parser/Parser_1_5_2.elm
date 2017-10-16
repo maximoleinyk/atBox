@@ -1,7 +1,7 @@
 module Parser_1_5_2 exposing (..)
 
 import Expect
-import GlobalTypes exposing (AST(..))
+import GlobalTypes exposing (AST(..), OutputOperatorType(AndOperatorType, IsEitherOperatorType, IsNeitherOperatorType, IsOperatorType, OrOperatorType), OutputValueType(MultipleValues, SingleValue))
 import Lexer
 import MockModel exposing (getDefaultModel)
 import Parser
@@ -35,33 +35,33 @@ suite =
                                 Node
                                     { left =
                                         Node
-                                            { left = Leaf "@forename"
-                                            , value = "is"
-                                            , right = Leaf "Maksym"
+                                            { left = Leaf (SingleValue "forename")
+                                            , value = IsOperatorType
+                                            , right = Leaf (SingleValue "Maksym")
                                             }
-                                    , value = "and"
+                                    , value = AndOperatorType
                                     , right =
                                         Node
-                                            { left = Leaf "@surname"
-                                            , value = "is either"
-                                            , right = Leaf " Ivanov or Petrov "
+                                            { left = Leaf (SingleValue "surname")
+                                            , value = IsEitherOperatorType
+                                            , right = Leaf (MultipleValues [ "Ivanov", "Petrov" ])
                                             }
                                     }
-                            , value = "or"
+                            , value = OrOperatorType
                             , right =
                                 Node
                                     { left =
                                         Node
-                                            { left = Leaf "@forename"
-                                            , value = "is"
-                                            , right = Leaf "Viktor"
+                                            { left = Leaf (SingleValue "forename")
+                                            , value = IsOperatorType
+                                            , right = Leaf (SingleValue "Viktor")
                                             }
-                                    , value = "and"
+                                    , value = AndOperatorType
                                     , right =
                                         Node
-                                            { left = Leaf "@surname"
-                                            , value = "is neither"
-                                            , right = Leaf " Sokolov nor Smirnov"
+                                            { left = Leaf (SingleValue "surname")
+                                            , value = IsNeitherOperatorType
+                                            , right = Leaf (MultipleValues [ "Sokolov", "Smirnov" ])
                                             }
                                     }
                             }
