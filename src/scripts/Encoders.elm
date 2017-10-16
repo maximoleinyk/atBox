@@ -81,7 +81,6 @@ encodeFsmResponse response =
             , ( "lexemes", encodeLexemes response.lexemes )
             , ( "ast", encodeAst response.ast )
             , ( "output", encodeTranslatorOutput response.output )
-            , ( "string", string response.string )
             ]
         )
 

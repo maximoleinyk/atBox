@@ -12,11 +12,6 @@ import String exposing (contains, toLower)
 import Utils
 
 
-onKeyUpGetCaretPosition : Attribute Msg
-onKeyUpGetCaretPosition =
-    on "keyup" (succeed GetCursorPosition)
-
-
 onPreventDefaultClick : Msg -> Attribute Msg
 onPreventDefaultClick action =
     let
@@ -84,8 +79,6 @@ view model =
                 , value model.value
                 , placeholder model.placeholder
                 , onInput UpdateValue
-                , onKeyUpGetCaretPosition
-                , onMouseDown GetCursorPosition
                 , onFocus Focus
                 , onBlur Blur
                 , onKeyDown model

@@ -2,14 +2,25 @@ module Update exposing (..)
 
 import ContextAnalyzer
 import Dom
-import Encoders exposing (encodeFsmResponse, encodeLexemes, encodeTokens, encodeTranslatorOutput, encodeValue)
-import GlobalTypes exposing (AST, CursorContext, FsmResponse, Lexeme, Model, Msg(Blur, EnterKeyPressed, Focus, FocusResult, GetCursorPosition, Parse, SelectHighlightedValue, UpdateCursorPosition, UpdateValue), Token, TokenState, TranslatorOutput)
-import Html.Attributes exposing (id)
-import Json.Encode exposing (encode, object, string)
+import Encoders
+import GlobalTypes
+    exposing
+        ( FsmResponse
+        , Model
+        , Msg
+            ( EnterKeyPressed
+            , Focus
+            , FocusResult
+            , GetCursorPosition
+            , Process
+            , SelectHighlightedValue
+            , UpdateCursorPosition
+            , UpdateValue
+            )
+        )
 import Lexer
 import Parser
-import Ports exposing (..)
-import SyntaxHighlighter
+import Ports exposing (emitData, getCursorPosition)
 import Task
 import Tokenizer
 import Translator
@@ -17,56 +28,6 @@ import Translator
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        getTokens : String -> Model -> ( List Token, List TokenState )
-        getTokens =
-            \value model ->
-                Tokenizer.run value model
-
-        getLexemes : List Token -> Model -> List Lexeme
-        getLexemes =
-            \tokens model ->
-                Lexer.run tokens model
-
-        getContext : String -> List Token -> List Lexeme -> Model -> List TokenState -> CursorContext
-        getContext =
-            \string tokens lexemes model remainingStates ->
-                ContextAnalyzer.run string tokens lexemes model remainingStates
-
-        getAST : List Lexeme -> Model -> AST
-        getAST =
-            \lexemes model ->
-                Parser.run lexemes model
-
-        getTranslatorOutput : AST -> Model -> TranslatorOutput
-        getTranslatorOutput =
-            \ast model ->
-                Translator.run ast model
-
-        parse : Model -> ( FsmResponse, CursorContext )
-        parse =
-            \model ->
-                let
-                    ( tokens, remainingStates ) =
-                        getTokens model.value model
-
-                    lexemes =
-                        getLexemes tokens model
-
-                    context =
-                        getContext model.value tokens lexemes model remainingStates
-
-                    ast =
-                        getAST lexemes model
-
-                    output =
-                        getTranslatorOutput ast model
-
-                    fsmResponse =
-                        FsmResponse tokens lexemes ast output ""
-                in
-                ( fsmResponse, context )
-    in
     case msg of
         Focus ->
             update GetCursorPosition { model | focused = True }
@@ -75,18 +36,33 @@ update msg model =
             ( model, getCursorPosition "" )
 
         UpdateCursorPosition newCursorIndex ->
-            update Parse { model | cursorIndex = newCursorIndex }
+            update Process { model | cursorIndex = newCursorIndex }
 
         UpdateValue newValue ->
-            update Parse { model | value = newValue }
+            update GetCursorPosition { model | value = newValue }
 
-        Parse ->
+        Process ->
             let
-                ( result, context ) =
-                    parse model
+                ( tokens, remainingStates ) =
+                    Tokenizer.run model.value model
+
+                lexemes =
+                    Lexer.run tokens model
+
+                context =
+                    ContextAnalyzer.run model.value tokens lexemes model remainingStates
+
+                ast =
+                    Parser.run lexemes model
+
+                output =
+                    Translator.run ast model
+
+                result =
+                    FsmResponse tokens lexemes ast output
 
                 command =
-                    emitData (encodeFsmResponse result)
+                    emitData (Encoders.encodeFsmResponse result)
             in
             ( { model | context = context }, command )
 
@@ -101,40 +77,16 @@ update msg model =
                 stringAfterIndex =
                     String.slice model.cursorIndex stringLength model.value
 
-                concatenatedString =
+                newValue =
                     stringBeforeIndex ++ data.replacementValue ++ stringAfterIndex
-
-                newModel =
-                    { model
-                        | value = concatenatedString
-                        , cursorIndex = String.length concatenatedString
-                    }
-
-                ( result, context ) =
-                    parse newModel
 
                 command =
                     Dom.focus model.id |> Task.attempt FocusResult
             in
-            ( { newModel | context = context }, command )
-
-        FocusResult result ->
-            case result of
-                Err (Dom.NotFound id) ->
-                    ( model, Cmd.none )
-
-                Ok () ->
-                    update (UpdateCursorPosition model.cursorIndex) model
+            ( { model | value = newValue }, command )
 
         EnterKeyPressed ->
-            let
-                ( result, context ) =
-                    parse model
-
-                command =
-                    emitDataOnEnterKey (encodeValue (encodeTranslatorOutput result.output))
-            in
-            ( { model | context = context }, command )
+            update Process model
 
         _ ->
             ( model, Cmd.none )

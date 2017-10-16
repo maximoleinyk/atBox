@@ -1,37 +1,21 @@
-module Init exposing (getInitialModel, init)
+module Init exposing (init)
 
-import Encoders exposing (encodeFsmResponse)
-import GlobalTypes exposing (AST(Null), Config, CursorContext(NoContext), FsmResponse, Model, TranslatorOutput(NoOutput))
-import Json.Decode exposing (decodeValue, list)
-import Maybe exposing (withDefault)
-import Ports exposing (emitData)
+import GlobalTypes exposing (Config, CursorContext(NoContext), Model, Msg(Focus))
+import Update exposing (update)
 
 
-init : Config -> ( Model, Cmd msg )
-init flags =
-    let
-        model =
-            getInitialModel flags
-
-        message =
-            encodeFsmResponse (FsmResponse [] [] Null NoOutput "")
-
-        command =
-            emitData message
-    in
-    ( model, command )
-
-
-getInitialModel : Config -> Model
-getInitialModel config =
-    Model
-        config.id
-        config.label
-        config.placeholder
-        config.value
-        config.queryFields
-        NoContext
-        ""
-        "@"
-        0
-        False
+init : Config -> ( Model, Cmd Msg )
+init config =
+    update Focus
+        (Model
+            config.id
+            config.label
+            config.placeholder
+            config.value
+            config.queryFields
+            NoContext
+            ""
+            "@"
+            0
+            False
+        )

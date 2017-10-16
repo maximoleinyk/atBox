@@ -83,7 +83,7 @@ type Msg
     | GetCursorPosition
     | Focus
     | Blur
-    | Parse
+    | Process
     | UpdateCursorPosition Int
     | UpdateCursorPositionFailed
     | ArrowLeftPressed
@@ -226,7 +226,6 @@ type alias FsmResponse =
     , lexemes : List Lexeme
     , ast : AST
     , output : TranslatorOutput
-    , string : String
     }
 
 
