@@ -8,7 +8,8 @@
         ".",
         "./tokenizer",
         "./lexer",
-        "./parser"
+        "./parser",
+        "./translator"
     ],
     "exposed-modules": [],
     "native-modules": true,

@@ -13,6 +13,7 @@ module GlobalTypes
         , OutputOperatorType(..)
         , OutputValueType(..)
         , QueryField
+        , Term(..)
         , Token
         , TokenState(..)
         , TranslatorOutput(..)
@@ -28,6 +29,15 @@ type TranslatorOutputValueType
     = Single String
     | Multiple (List String)
     | None
+
+
+type Term
+    = Expression (List Term)
+    | Operand Lexeme
+    | AndOperator
+    | OrOperator
+    | OpenParenthesis
+    | CloseParenthesis
 
 
 type TranslatorOutput

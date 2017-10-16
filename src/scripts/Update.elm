@@ -1,4 +1,4 @@
-module Update exposing (..)
+module Update exposing (update)
 
 import ContextAnalyzer
 import Dom
@@ -81,7 +81,7 @@ update msg model =
                     stringBeforeIndex ++ data.replacementValue ++ stringAfterIndex
 
                 command =
-                    Dom.focus model.id |> Task.attempt FocusResult
+                    Task.attempt FocusResult (Dom.focus model.id)
             in
             ( { model | value = newValue }, command )
 

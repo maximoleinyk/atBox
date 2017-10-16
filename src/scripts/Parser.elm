@@ -1,16 +1,7 @@
 module Parser exposing (run)
 
-import GlobalTypes exposing (AST(..), Lexeme, LexemeState(..), Model, OperatorType(..), OutputOperatorType(..), OutputValueType(MultipleValues, NoValue, SingleValue))
+import GlobalTypes exposing (AST(..), Lexeme, LexemeState(..), Model, OperatorType(..), OutputOperatorType(..), OutputValueType(MultipleValues, NoValue, SingleValue), Term(AndOperator, Expression, OpenParenthesis, Operand, OrOperator))
 import Utils
-
-
-type Term
-    = Expression (List Term)
-    | Operand Lexeme
-    | AndOperator
-    | OrOperator
-    | OpenParenthesis
-    | CloseParenthesis
 
 
 processRightParenthesis : Lexeme -> Model -> List Term -> List Lexeme -> List Term

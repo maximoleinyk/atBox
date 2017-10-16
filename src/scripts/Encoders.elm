@@ -5,7 +5,6 @@ module Encoders
         , encodeLexemes
         , encodeTokens
         , encodeTranslatorOutput
-        , encodeValue
         )
 
 import GlobalTypes exposing (AST(..), FsmResponse, Lexeme, OutputOperatorType(..), OutputValueType(..), Token, TokenState, TranslatorOutput(..), TranslatorOutputValueType(..))
@@ -61,16 +60,8 @@ encodeNodeValue outputOperatorValue =
 
                 NoOutputType ->
                     ""
-
-        result =
-            string convertedValue
     in
-    result
-
-
-encodeValue : Value -> String
-encodeValue value =
-    encode 2 value
+    string convertedValue
 
 
 encodeFsmResponse : FsmResponse -> String
@@ -133,7 +124,7 @@ encodeTranslatorOutputValue value =
             string v
 
         Multiple l ->
-            list (List.map (\i -> string i) l)
+            list (List.map encodeToString l)
 
         None ->
             null
