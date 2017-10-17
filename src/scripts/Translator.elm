@@ -7,6 +7,9 @@ import Utils
 getOutputOperatorType : OutputOperatorType -> String
 getOutputOperatorType t =
     case t of
+        ContainsOperatorType ->
+            "contins"
+
         IsOperatorType ->
             "=="
 

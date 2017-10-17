@@ -341,6 +341,15 @@ convertValue term operatorType =
             case lexeme.state of
                 LexemeValue ->
                     case operatorType of
+                        ContainsOperatorType ->
+                            let
+                                value =
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "\"" ""
+                            in
+                            SingleValue value
+
                         IsOperatorType ->
                             let
                                 value =
@@ -470,6 +479,9 @@ convertOperator lexemeState =
 
                 IsNotInType ->
                     IsNotInOperatorType
+
+                ContainsType ->
+                    ContainsOperatorType
 
         _ ->
             NoOutputType

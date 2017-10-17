@@ -62,6 +62,7 @@ type OperatorType
     | IsNeitherType
     | IsInType
     | IsNotInType
+    | ContainsType
 
 
 type ValueType
@@ -109,6 +110,7 @@ type OutputOperatorType
     | IsNeitherOperatorType
     | IsInOperatorType
     | IsNotInOperatorType
+    | ContainsOperatorType
     | OrOperatorType
     | AndOperatorType
     | NoOutputType
@@ -134,8 +136,8 @@ type TokenState
     = Start
     | Statement
     | TokenValue
-    | MultiQuotedWord
-    | SingleWord
+    | QuotedWord
+    | Word
     | Criteria
     | Criterion
     | Conjunction
@@ -149,7 +151,7 @@ type TokenState
     | IsNotOperator
     | IsInOperator
     | IsNotInOperator
-    | InValue
+    | CommaSeparatedValue
     | SpaceTerm
     | WordTerm
     | KeywordTerm
@@ -171,6 +173,8 @@ type TokenState
     | CommaTerm
     | OpenParenthesisTerm
     | CloseParenthesisTerm
+    | ContainsOperator
+    | ContainsTerm
 
 
 type LexerState

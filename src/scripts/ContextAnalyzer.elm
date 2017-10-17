@@ -1,7 +1,7 @@
 module ContextAnalyzer exposing (run, run2)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (CursorContext(JoinerContext, KeywordContext, NoContext, OperatorContext, ValueContext, ValueSeparatorContext), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(AndTerm, CloseParenthesisInOperatorTerm, CloseParenthesisTerm, CommaTerm, EitherOrTerm, EndQuoteTerm, IsEitherTerm, IsInTerm, IsNeitherTerm, IsNotInTerm, IsNotTerm, IsTerm, KeywordTerm, NeitherNorTerm, OpenParenthesisInOperatorTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, Statement, UnknownKeywordTerm, WordTerm), ValueType(ValueStringType))
+import GlobalTypes exposing (CursorContext(JoinerContext, KeywordContext, NoContext, OperatorContext, ValueContext, ValueSeparatorContext), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(AndTerm, CloseParenthesisInOperatorTerm, CloseParenthesisTerm, CommaTerm, ContainsTerm, EitherOrTerm, EndQuoteTerm, IsEitherTerm, IsInTerm, IsNeitherTerm, IsNotInTerm, IsNotTerm, IsTerm, KeywordTerm, NeitherNorTerm, OpenParenthesisInOperatorTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, Statement, UnknownKeywordTerm, WordTerm), ValueType(ValueStringType))
 import Regex exposing (HowMany(All))
 import Tokenizer
 import Utils
@@ -84,6 +84,7 @@ processOperatorsContext query =
                 , ( "4", "is not in" )
                 , ( "5", "is either" )
                 , ( "6", "is neither" )
+                , ( "7", "contains" )
                 ]
     in
     OperatorContext operators query
@@ -632,6 +633,9 @@ getTokenStateMapping tokenState =
 
         IsNotInTerm ->
             ( "is_not_in_term", "is not in" )
+
+        ContainsTerm ->
+            ( "like", "contains" )
 
         OpenParenthesisInOperatorTerm ->
             ( "open_parenthesis_in_term", "(" )

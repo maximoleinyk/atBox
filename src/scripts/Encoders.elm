@@ -34,6 +34,9 @@ encodeNodeValue outputOperatorValue =
     let
         convertedValue =
             case outputOperatorValue of
+                ContainsOperatorType ->
+                    "like"
+
                 IsOperatorType ->
                     "="
 

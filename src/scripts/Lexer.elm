@@ -1,7 +1,7 @@
 module Lexer exposing (run)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), LexerState(..), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
+import GlobalTypes exposing (Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), LexerState(..), Model, OperatorType(ContainsType, IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
 import Regex
 
 
@@ -277,7 +277,7 @@ parseValue tokens model previousLexeme position =
                                 nothing
                             else
                                 ( newTokens, lexeme, newPosition )
-                        else if operatorType == IsType || operatorType == IsNotType then
+                        else if operatorType == IsType || operatorType == IsNotType || operatorType == ContainsType then
                             let
                                 ( newTokens, lexeme, newPosition ) =
                                     parseSingleValue tokens model position position
@@ -415,6 +415,9 @@ parseOperator tokens model initPosition endOperatorPosition =
             case nextToken.state of
                 SpaceTerm ->
                     parseOperator restTokens model newPosition newPosition
+
+                ContainsTerm ->
+                    ( restTokens, Just (Lexeme (Operator ContainsType) nextToken.value initPosition), newPosition )
 
                 IsTerm ->
                     ( restTokens, Just (Lexeme (Operator IsType) nextToken.value initPosition), newPosition )

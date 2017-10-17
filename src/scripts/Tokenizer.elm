@@ -94,6 +94,11 @@ or string model =
     regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(or)"))
 
 
+contains : String -> Model -> String
+contains string model =
+    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(contains)"))
+
+
 startQuote : String -> Model -> String
 startQuote string model =
     regexTokenizer string (Regex.regex "^(\")")
@@ -235,6 +240,9 @@ map string model state queue loopDetectionDict parentState position =
         IsNeitherTerm ->
             process string model state isNeither queue newMapping parentState position
 
+        ContainsTerm ->
+            process string model state contains queue newMapping parentState position
+
         _ ->
             walk string model queue newMapping state position
 
@@ -308,7 +316,10 @@ getPossibleStates state =
             [ KeywordTerm, SpaceTerm, TokenOperator ]
 
         TokenOperator ->
-            [ IsEitherOperator, IsNeitherOperator, IsNotInOperator, IsInOperator, IsNotOperator, IsOperator ]
+            [ ContainsOperator, IsEitherOperator, IsNeitherOperator, IsNotInOperator, IsInOperator, IsNotOperator, IsOperator ]
+
+        ContainsOperator ->
+            [ ContainsTerm, SpaceTerm, TokenValue ]
 
         IsOperator ->
             [ IsTerm, SpaceTerm, TokenValue ]
@@ -317,10 +328,10 @@ getPossibleStates state =
             [ IsNotTerm, SpaceTerm, TokenValue ]
 
         IsInOperator ->
-            [ IsInTerm, Statement, OpenParenthesisInOperatorTerm, InValue, CloseParenthesisInOperatorTerm ]
+            [ IsInTerm, Statement, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
 
         IsNotInOperator ->
-            [ IsNotInTerm, Statement, OpenParenthesisInOperatorTerm, InValue, CloseParenthesisInOperatorTerm ]
+            [ IsNotInTerm, Statement, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
 
         IsEitherOperator ->
             [ IsEitherTerm, SpaceTerm, TokenValue, SpaceTerm, EitherOrTerm, SpaceTerm, TokenValue ]
@@ -328,16 +339,16 @@ getPossibleStates state =
         IsNeitherOperator ->
             [ IsNeitherTerm, SpaceTerm, TokenValue, SpaceTerm, NeitherNorTerm, SpaceTerm, TokenValue ]
 
-        InValue ->
-            [ SpaceTerm, TokenValue, CommaTerm, SpaceTerm, InValue ]
+        CommaSeparatedValue ->
+            [ SpaceTerm, TokenValue, CommaTerm, SpaceTerm, CommaSeparatedValue ]
 
         TokenValue ->
-            [ MultiQuotedWord, SingleWord ]
+            [ QuotedWord, Word ]
 
-        SingleWord ->
+        Word ->
             [ WordTerm ]
 
-        MultiQuotedWord ->
+        QuotedWord ->
             [ StartQuoteTerm, Statement, EndQuoteTerm ]
 
         Conjunction ->
@@ -361,6 +372,9 @@ processFailedResult string model state queue loopDetectionDict parentState newPo
                 walk string model (List.drop n queue) loopDetectionDict parentState newPosition
     in
     case state of
+        ContainsTerm ->
+            dropNextStatesAndWalk 2
+
         OpenParenthesisInOperatorTerm ->
             dropNextStatesAndWalk 2
 
@@ -437,6 +451,9 @@ processSuccessfulResult result string model state queue loopDetectionDict parent
                 ( token ++ result, remainingStates )
     in
     case state of
+        ContainsTerm ->
+            dropAheadAndWalk 6
+
         OrTerm ->
             dropAheadAndWalk 1
 
