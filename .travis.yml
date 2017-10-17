@@ -11,10 +11,8 @@ cache:
   directories:
     - tests/elm-stuff/build-artifacts
 install:
-  - npm install -g elm@0.18.0 elm-test@0.18.3
-  - mv $(npm config get prefix)/bin/elm-make $(npm config get prefix)/bin/elm-make-old
-  - chmod +x $(npm config get prefix)/bin/elm-make
-  - travis_retry elm-package install --yes
+  - npm install -g elm elm-test
+  - elm-package install --yes
   - npm install
 script:
-  - "npm run build"
+  - "elm test"
