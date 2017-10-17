@@ -6,7 +6,7 @@ node_js:
   - "8"
 before_script:
   - "npm install -g elm"
-  - "elm package install"
+  - "elm package install -y"
   - "npm install"
 script:
   - "npm build"
