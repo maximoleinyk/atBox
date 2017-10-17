@@ -54,6 +54,10 @@ suite =
                           , value = "Oliinyk"
                           , index = 17
                           }
+                        , { state = EndQuoteTerm
+                          , value = "\""
+                          , index = 24
+                          }
                         ]
             ]
         ]

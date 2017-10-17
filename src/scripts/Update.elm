@@ -3,21 +3,7 @@ module Update exposing (update)
 import ContextAnalyzer
 import Dom
 import Encoders
-import GlobalTypes
-    exposing
-        ( FsmResponse
-        , Model
-        , Msg
-            ( EnterKeyPressed
-            , Focus
-            , FocusResult
-            , GetCursorPosition
-            , Process
-            , SelectHighlightedValue
-            , UpdateCursorPosition
-            , UpdateValue
-            )
-        )
+import GlobalTypes exposing (FsmResponse, Model, Msg(EnterKeyPressed, Focus, FocusResult, GetCursorPosition, Init, Process, SelectHighlightedValue, UpdateCursorPosition, UpdateValue))
 import Lexer
 import Parser
 import Ports exposing (emitData, emitDataOnEnterKey, getCursorPosition)
@@ -29,6 +15,9 @@ import Translator
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Init ->
+            update Process model
+
         Focus ->
             update GetCursorPosition { model | focused = True }
 

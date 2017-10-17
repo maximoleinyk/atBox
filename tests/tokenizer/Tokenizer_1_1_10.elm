@@ -46,7 +46,7 @@ suite =
                           , value = " "
                           , index = 14
                           }
-                        , { state = OrTerm
+                        , { state = WordTerm
                           , value = "or"
                           , index = 15
                           }

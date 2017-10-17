@@ -70,7 +70,7 @@ suite =
                           , value = " "
                           , index = 26
                           }
-                        , { state = IsTerm
+                        , { state = WordTerm
                           , value = "is"
                           , index = 27
                           }

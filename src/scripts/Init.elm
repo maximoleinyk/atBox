@@ -1,12 +1,12 @@
 module Init exposing (init)
 
-import GlobalTypes exposing (Config, CursorContext(NoContext), Model, Msg(Focus))
+import GlobalTypes exposing (Config, CursorContext(NoContext), Model, Msg(Init))
 import Update exposing (update)
 
 
 init : Config -> ( Model, Cmd Msg )
 init config =
-    update Focus
+    update Init
         (Model
             config.id
             config.label

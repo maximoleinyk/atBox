@@ -30,10 +30,6 @@ suite =
                           , value = "@name"
                           , index = 0
                           }
-                        , { state = Joiner
-                          , value = "or"
-                          , index = 15
-                          }
                         ]
             ]
         ]

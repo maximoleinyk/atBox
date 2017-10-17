@@ -17,6 +17,7 @@
   "scripts": {
     "watch": "webpack --watch",
     "test": "elm test",
+    "webpack": "webpack",
     "build": "npm test"
   },
   "repository": {

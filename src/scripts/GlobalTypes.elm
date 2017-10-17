@@ -91,6 +91,7 @@ type Msg
     | ArrowDownPressed
     | TabKeyPressed
     | GetCursorPosition
+    | Init
     | Focus
     | Blur
     | Process
