@@ -15,4 +15,4 @@ install:
   - elm-package install --yes
   - npm install
 script:
-  - "elm test"
+  - elm test

@@ -1,7 +1,7 @@
 {
   "name": "at-box",
   "version": "1.0.0",
-  "description": "input = `find person whose @name is Maksym` ``` output = [     {         \"name\": {             operator: \"is\"             value: \"Maksym\"         }     } ]  ```",
+  "description": "Very clever text box",
   "main": "src/main.js",
   "directories": {
     "test": "tests"

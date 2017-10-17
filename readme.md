@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/maximoleinyk/atBox.svg?branch=master)](https://travis-ci.org/maximoleinyk/atBox)
+
 # Demo
 ![](https://github.com/maximoleinyk/atBox/blob/master/resources/demo.gif)
 
