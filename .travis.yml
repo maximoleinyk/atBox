@@ -9,4 +9,4 @@ before_script:
   - "elm package install -y"
   - "npm install"
 script:
-  - "npm build"
+  - "npm run build"
