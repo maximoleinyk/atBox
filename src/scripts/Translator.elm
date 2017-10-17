@@ -1,6 +1,7 @@
 module Translator exposing (run)
 
 import GlobalTypes exposing (AST(..), Model, OutputOperatorType(..), OutputValueType(..), TranslatorOutput(..), TranslatorOutputValueType(Multiple, None, Single))
+import Utils
 
 
 getOutputOperatorType : OutputOperatorType -> String

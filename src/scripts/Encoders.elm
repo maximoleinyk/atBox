@@ -124,7 +124,7 @@ encodeTranslatorOutputValue value =
             string v
 
         Multiple l ->
-            list (List.map encodeToString l)
+            list (List.map (\i -> string i) l)
 
         None ->
             null

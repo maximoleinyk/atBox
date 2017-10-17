@@ -1,0 +1,12 @@
+language: node_js
+env:
+  - NODE_ENV=production
+node_js:
+  - "lts/*"
+  - "8"
+before_script:
+  - "npm install -g elm"
+  - "elm package install"
+  - "npm install"
+script:
+  - "npm build"

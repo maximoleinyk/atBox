@@ -325,15 +325,29 @@ convertValue term operatorType =
                 LexemeValue ->
                     case operatorType of
                         IsOperatorType ->
-                            SingleValue (String.trim lexeme.value)
+                            let
+                                value =
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "\"" ""
+                            in
+                            SingleValue value
 
                         IsNotOperatorType ->
-                            SingleValue (String.trim lexeme.value)
+                            let
+                                value =
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "\"" ""
+                            in
+                            SingleValue value
 
                         IsEitherOperatorType ->
                             let
                                 values =
-                                    String.trim lexeme.value
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "\"" ""
 
                                 newValues =
                                     if String.length values == 0 then
@@ -346,7 +360,9 @@ convertValue term operatorType =
                         IsNeitherOperatorType ->
                             let
                                 values =
-                                    String.trim lexeme.value
+                                    lexeme.value
+                                        |> String.trim
+                                        |> Utils.replace "\"" ""
 
                                 newValues =
                                     if String.length values == 0 then
@@ -363,6 +379,7 @@ convertValue term operatorType =
                                         |> String.trim
                                         |> Utils.replace "(" ""
                                         |> Utils.replace ")" ""
+                                        |> Utils.replace "\"" ""
 
                                 newValues =
                                     if String.length values == 0 then
@@ -379,6 +396,7 @@ convertValue term operatorType =
                                         |> String.trim
                                         |> Utils.replace "(" ""
                                         |> Utils.replace ")" ""
+                                        |> Utils.replace "\"" ""
 
                                 newValues =
                                     if String.length values == 0 then

@@ -20,7 +20,7 @@ import GlobalTypes
         )
 import Lexer
 import Parser
-import Ports exposing (emitData, getCursorPosition)
+import Ports exposing (emitData, emitDataOnEnterKey, getCursorPosition)
 import Task
 import Tokenizer
 import Translator
@@ -86,7 +86,29 @@ update msg model =
             ( { model | value = newValue }, command )
 
         EnterKeyPressed ->
-            update Process model
+            let
+                ( tokens, remainingStates ) =
+                    Tokenizer.run model.value model
+
+                lexemes =
+                    Lexer.run tokens model
+
+                context =
+                    ContextAnalyzer.run model.value tokens lexemes model remainingStates
+
+                ast =
+                    Parser.run lexemes model
+
+                output =
+                    Translator.run ast model
+
+                result =
+                    FsmResponse tokens lexemes ast output
+
+                command =
+                    emitDataOnEnterKey (Encoders.encodeFsmResponse result)
+            in
+            ( { model | context = context }, command )
 
         _ ->
             ( model, Cmd.none )
