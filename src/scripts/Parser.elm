@@ -1,6 +1,6 @@
 module Parser exposing (run)
 
-import GlobalTypes exposing (AST(..), Lexeme, LexemeState(..), Model, OperatorType(..), OutputOperatorType(..), OutputValueType(MultipleValues, NoValue, SingleValue), Term(AndOperator, Expression, OpenParenthesis, Operand, OrOperator))
+import GlobalTypes exposing (AST(..), Lexeme, LexemeState(..), Model, OperatorType(..), OutputOperatorType(..), OutputValueType(MultipleValues, NoValue, SingleValue), Term(AndOperator, Expression, OpenParenthesis, Operand, OrOperator), TokenState(UnknownKeywordTerm))
 import Utils
 
 
@@ -195,6 +195,9 @@ buildExpressionTree lexemes model stack =
                 Field ->
                     processField nextLexeme model stack restLexemes
 
+                UnknownField ->
+                    processField nextLexeme model stack restLexemes
+
                 Operator operatorType ->
                     processOperator nextLexeme model stack restLexemes
 
@@ -303,14 +306,28 @@ traverseTree stack model =
                 -- [ Item Operator Item ]
                 Operand lexeme ->
                     let
-                        operator =
-                            convertOperator lexeme.state
+                        node =
+                            let
+                                operator =
+                                    convertOperator lexeme.state
+                            in
+                            Node
+                                { left = Leaf (convertKeyword x model)
+                                , value = operator
+                                , right = Leaf (convertValue z operator)
+                                }
                     in
-                    Node
-                        { left = Leaf (convertKeyword x model)
-                        , value = operator
-                        , right = Leaf (convertValue z operator)
-                        }
+                    case x of
+                        Operand l ->
+                            case l.state of
+                                UnknownField ->
+                                    Null
+
+                                _ ->
+                                    node
+
+                        _ ->
+                            node
 
                 -- unreachable
                 _ ->

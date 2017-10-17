@@ -1,7 +1,7 @@
 module Lexer exposing (run)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis), LexerState(..), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
+import GlobalTypes exposing (Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), LexerState(..), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsNotType, IsType), Token, TokenState(..))
 import Regex
 
 
@@ -185,8 +185,8 @@ parseValueForEitherOrNeitherOperator tokens model resultString initialPosition e
                     returnResult
 
 
-parseMultiValue : List Token -> Model -> Int -> Int -> ( List Token, Maybe Lexeme, Int )
-parseMultiValue tokens model initialPosition endValuePosition =
+parseValueForInOperator : List Token -> Model -> Int -> Int -> ( List Token, Maybe Lexeme, Int )
+parseValueForInOperator tokens model initialPosition endValuePosition =
     case tokens of
         [] ->
             ( tokens, Just (Lexeme LexemeValue "" initialPosition), endValuePosition )
@@ -198,7 +198,14 @@ parseMultiValue tokens model initialPosition endValuePosition =
                         newPosition =
                             endValuePosition + String.length nextToken.value
                     in
-                    parseMultiValue restTokens model initialPosition newPosition
+                    parseValueForInOperator restTokens model initialPosition newPosition
+
+                WordTerm ->
+                    let
+                        newPosition =
+                            endValuePosition + String.length nextToken.value
+                    in
+                    parseValueForInOperator restTokens model initialPosition newPosition
 
                 OpenParenthesisInOperatorTerm ->
                     let
@@ -264,7 +271,7 @@ parseValue tokens model previousLexeme position =
                         else if operatorType == IsInType || operatorType == IsNotInType then
                             let
                                 ( newTokens, lexeme, newPosition ) =
-                                    parseMultiValue tokens model position position
+                                    parseValueForInOperator tokens model position position
                             in
                             if lexeme == Nothing then
                                 nothing
@@ -302,6 +309,9 @@ parseField tokens model position =
                 KeywordTerm ->
                     -- success - we found a keyword
                     ( rest, Just (Lexeme Field first.value position), newPosition )
+
+                UnknownKeywordTerm ->
+                    ( rest, Just (Lexeme UnknownField first.value position), newPosition )
 
                 SpaceTerm ->
                     -- if we encounter space - skip it and take next token
@@ -449,10 +459,10 @@ process tokens model state queue loopDetectionDict previousLexeme position =
             in
             case lexeme of
                 Nothing ->
-                    walk newTokens model queue newMapping previousLexeme newPosition
+                    traverse newTokens model queue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
+                    [ lexeme ] ++ traverse newTokens model queue newMapping (Just lexeme) newPosition
 
         OPEN_PARENTHESIS_TERM ->
             let
@@ -466,10 +476,10 @@ process tokens model state queue loopDetectionDict previousLexeme position =
                         newQueue =
                             List.drop 1 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme newPosition
+                    traverse newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
+                    [ lexeme ] ++ traverse newTokens model queue newMapping (Just lexeme) newPosition
 
         FIELD_TERM ->
             let
@@ -486,10 +496,10 @@ process tokens model state queue loopDetectionDict previousLexeme position =
                         newQueue =
                             List.drop 2 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme newPosition
+                    traverse newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
+                    [ lexeme ] ++ traverse newTokens model queue newMapping (Just lexeme) newPosition
 
         OPERATOR_TERM ->
             let
@@ -506,10 +516,10 @@ process tokens model state queue loopDetectionDict previousLexeme position =
                         newQueue =
                             List.drop 1 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme newPosition
+                    traverse newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
+                    [ lexeme ] ++ traverse newTokens model queue newMapping (Just lexeme) newPosition
 
         VALUE_TERM ->
             let
@@ -518,10 +528,10 @@ process tokens model state queue loopDetectionDict previousLexeme position =
             in
             case lexeme of
                 Nothing ->
-                    walk newTokens model queue newMapping previousLexeme position
+                    traverse newTokens model queue newMapping previousLexeme position
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
+                    [ lexeme ] ++ traverse newTokens model queue newMapping (Just lexeme) newPosition
 
         CLOSE_PARENTHESIS_TERM ->
             let
@@ -535,17 +545,17 @@ process tokens model state queue loopDetectionDict previousLexeme position =
                         newQueue =
                             List.drop 1 queue
                     in
-                    walk newTokens model newQueue newMapping previousLexeme newPosition
+                    traverse newTokens model newQueue newMapping previousLexeme newPosition
 
                 Just lexeme ->
-                    [ lexeme ] ++ walk newTokens model queue newMapping (Just lexeme) newPosition
+                    [ lexeme ] ++ traverse newTokens model queue newMapping (Just lexeme) newPosition
 
         _ ->
-            walk tokens model queue newMapping previousLexeme position
+            traverse tokens model queue newMapping previousLexeme position
 
 
-walk : List Token -> Model -> List LexerState -> Dict String Int -> Maybe Lexeme -> Int -> List Lexeme
-walk tokens model queue loopDetectionDict previousLexeme position =
+traverse : List Token -> Model -> List LexerState -> Dict String Int -> Maybe Lexeme -> Int -> List Lexeme
+traverse tokens model queue loopDetectionDict previousLexeme position =
     if List.length tokens == 0 then
         []
     else
@@ -581,7 +591,7 @@ walk tokens model queue loopDetectionDict previousLexeme position =
                     Just previousLength ->
                         if previousLength == currentLength then
                             -- if both lengths are equal - we are inside infinite loop - try to move to the next state
-                            walk tokens model rest loopDetectionDict previousLexeme position
+                            traverse tokens model rest loopDetectionDict previousLexeme position
                         else
                             -- lengths are different - there is a chance that we might on a correct branch
                             process tokens model state newStatesQueue loopDetectionDict previousLexeme position
@@ -596,4 +606,4 @@ run tokens model =
         loopDetection =
             Dict.empty
     in
-    walk tokens model [ initialState ] loopDetection Nothing 0
+    traverse tokens model [ initialState ] loopDetection Nothing 0

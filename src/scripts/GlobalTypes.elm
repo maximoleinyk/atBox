@@ -189,6 +189,7 @@ type LexerState
 
 type LexemeState
     = Field
+    | UnknownField
     | Operator OperatorType
     | LexemeValue
     | Joiner
