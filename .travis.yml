@@ -4,9 +4,17 @@ env:
 node_js:
   - "lts/*"
   - "8"
-before_script:
-  - "npm install -g elm"
-  - "elm package install -y"
-  - "npm install"
+sudo: false
+os:
+  - linux
+cache:
+  directories:
+    - tests/elm-stuff/build-artifacts
+install:
+  - npm install -g elm@0.18.0 elm-test@0.18.3
+  - mv $(npm config get prefix)/bin/elm-make $(npm config get prefix)/bin/elm-make-old
+  - chmod +x $(npm config get prefix)/bin/elm-make
+  - travis_retry elm-package install --yes
+  - npm install
 script:
   - "npm run build"
