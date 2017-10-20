@@ -338,3 +338,57 @@ output =
     ]
 }
 ```
+
+### Case 1.7.2:
+input = `((@name is either Max or Joe) or (@surname is neither Oliinyk nor Doe)) 
+            and ((@age is not 27) or (@forename is Oliinyk)) 
+                or @surname is not Smirnov`
+```
+output = {
+    "or": [
+        {
+            "and": [
+                {
+                    "or": [
+                        {
+                            "field": "name",
+                            "operator": "in",
+                            "value": [
+                                "Max",
+                                "Joe"
+                            ]
+                        },
+                        {
+                            "field": "surname",
+                            "operator": "not in",
+                            "value": [
+                                "Oliinyk",
+                                "Doe"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "field": "age",
+                            "operator": "!=",
+                            "value": "27"
+                        },
+                        {
+                            "field": "forename",
+                            "operator": "==",
+                            "value": "Oliinyk"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "field": "surname",
+            "operator": "!=",
+            "value": "Smirnov"
+        }
+    ]
+}
+```
