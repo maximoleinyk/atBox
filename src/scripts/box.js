@@ -39,6 +39,7 @@
       }
       return queryField;
     });
+    const autoSuggest = typeof config.autoSuggest === 'undefined' ? true : !!config.autoSuggest;
     
     if (!nodes.length) {
       throw "You specified wrong query selector '" + config.root + "'";
@@ -51,7 +52,9 @@
         value: node.value || '',
         queryFields: normalizedQueryFields,
         placeholder: 'Click here and start typing'
-      }, config || {}));
+      }, config || {}, {
+        autoSuggest: autoSuggest
+      }));
       
       component.ports.getCursorPosition.subscribe(function () {
         const input = document.querySelector(config.root + ' input');

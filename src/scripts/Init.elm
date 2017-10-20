@@ -18,4 +18,5 @@ init config =
             "@"
             0
             False
+            config.autoSuggest
         )

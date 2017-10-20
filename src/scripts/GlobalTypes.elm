@@ -134,7 +134,7 @@ type AST
 
 type TokenState
     = Start
-    | Statement
+    | Sentence
     | TokenValue
     | QuotedWord
     | Word
@@ -145,6 +145,7 @@ type TokenState
     | AndConjunction
     | TokenOperator
     | OperatorGroup
+    | ParenthesisGroup
     | IsOperator
     | IsEitherOperator
     | IsNeitherOperator
@@ -234,6 +235,7 @@ type alias Model =
     , keywordDelimiter : String
     , cursorIndex : Int
     , focused : Bool
+    , autoSuggest : Bool
     }
 
 
@@ -251,4 +253,5 @@ type alias Config =
     , placeholder : String
     , queryFields : List QueryField
     , value : String
+    , autoSuggest : Bool
     }

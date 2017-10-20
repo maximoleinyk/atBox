@@ -17,8 +17,8 @@ run string model =
     walk string model [ initialState ] loopDetection initialState 0
 
 
-regexTokenizer : String -> Regex -> String
-regexTokenizer string pattern =
+termParser : String -> Regex -> String
+termParser string pattern =
     let
         patternMatches =
             Regex.find All pattern string
@@ -36,77 +36,77 @@ regexTokenizer string pattern =
 
 closeParenthesis : String -> Model -> String
 closeParenthesis string model =
-    regexTokenizer string (Regex.regex "^(\\))")
+    termParser string (Regex.regex "^(\\))")
 
 
 openParenthesis : String -> Model -> String
 openParenthesis string model =
-    regexTokenizer string (Regex.regex "^(\\()")
+    termParser string (Regex.regex "^(\\()")
 
 
 isIn : String -> Model -> String
 isIn string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+in)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(is\\s+in)"))
 
 
 isNotIn : String -> Model -> String
 isNotIn string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+not\\s+in)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(is\\s+not\\s+in)"))
 
 
 is : String -> Model -> String
 is string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(is)"))
 
 
 isNot : String -> Model -> String
 isNot string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+not)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(is\\s+not)"))
 
 
 isEither : String -> Model -> String
 isEither string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+either)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(is\\s+either)"))
 
 
 isNeither : String -> Model -> String
 isNeither string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(is\\s+neither)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(is\\s+neither)"))
 
 
 comma : String -> Model -> String
 comma string model =
-    regexTokenizer string (Regex.regex "^(,)")
+    termParser string (Regex.regex "^(,)")
 
 
 nor : String -> Model -> String
 nor string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(nor)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(nor)"))
 
 
 and : String -> Model -> String
 and string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(and)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(and)"))
 
 
 or : String -> Model -> String
 or string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(or)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(or)"))
 
 
 contains : String -> Model -> String
 contains string model =
-    regexTokenizer string (Regex.caseInsensitive (Regex.regex "^(contains)"))
+    termParser string (Regex.caseInsensitive (Regex.regex "^(contains)"))
 
 
 startQuote : String -> Model -> String
 startQuote string model =
-    regexTokenizer string (Regex.regex "^(\")")
+    termParser string (Regex.regex "^(\")")
 
 
 endQuote : String -> Model -> String
 endQuote string model =
-    regexTokenizer string (Regex.regex "^(\")")
+    termParser string (Regex.regex "^(\")")
 
 
 keyword : String -> Model -> String
@@ -121,7 +121,7 @@ keyword string model =
         keywordPattern =
             Regex.caseInsensitive (Regex.regex ("^" ++ model.keywordDelimiter ++ "(" ++ concatenatedKeywordList ++ ")"))
     in
-    regexTokenizer string keywordPattern
+    termParser string keywordPattern
 
 
 unknownKeyword : String -> Model -> String
@@ -133,7 +133,7 @@ unknownKeyword string model =
         regexp =
             Regex.caseInsensitive (Regex.regex pattern)
     in
-    regexTokenizer string regexp
+    termParser string regexp
 
 
 word : String -> Model -> String
@@ -147,7 +147,7 @@ word string model =
                 _ ->
                     let
                         result =
-                            regexTokenizer first (Regex.regex ("([^ " ++ model.keywordDelimiter ++ "\",())])"))
+                            termParser first (Regex.regex ("([^ " ++ model.keywordDelimiter ++ "\",())])"))
                     in
                     if result == "" then
                         ""
@@ -273,6 +273,9 @@ walk string model queue loopDetectionDict parentState position =
                     -- get previous state of the entry when we were in this state
                     previousValue =
                         Dict.get (toString state) loopDetectionDict
+
+                    --                    a =
+                    --                        Debug.log (toString state) newStatesQueue
                 in
                 case previousValue of
                     Nothing ->
@@ -301,16 +304,19 @@ getPossibleStates : TokenState -> List TokenState
 getPossibleStates state =
     case state of
         Start ->
-            [ Statement, Criteria ]
+            [ Sentence, Criteria, Start ]
 
-        Statement ->
-            [ SpaceTerm, WordTerm, Statement ]
+        Sentence ->
+            [ SpaceTerm, WordTerm, Sentence ]
 
         Criteria ->
-            [ Criterion, Start ]
+            [ Criterion, SpaceTerm, Conjunction ]
 
         Criterion ->
-            [ OpenParenthesisTerm, SpaceTerm, OperatorGroup, SpaceTerm, CloseParenthesisTerm, SpaceTerm, Conjunction ]
+            [ ParenthesisGroup, OperatorGroup ]
+
+        ParenthesisGroup ->
+            [ OpenParenthesisTerm, SpaceTerm, Start, SpaceTerm, CloseParenthesisTerm ]
 
         OperatorGroup ->
             [ KeywordTerm, SpaceTerm, TokenOperator ]
@@ -328,10 +334,10 @@ getPossibleStates state =
             [ IsNotTerm, SpaceTerm, TokenValue ]
 
         IsInOperator ->
-            [ IsInTerm, Statement, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
+            [ IsInTerm, Sentence, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
 
         IsNotInOperator ->
-            [ IsNotInTerm, Statement, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
+            [ IsNotInTerm, Sentence, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
 
         IsEitherOperator ->
             [ IsEitherTerm, SpaceTerm, TokenValue, SpaceTerm, EitherOrTerm, SpaceTerm, TokenValue ]
@@ -349,7 +355,7 @@ getPossibleStates state =
             [ WordTerm ]
 
         QuotedWord ->
-            [ StartQuoteTerm, Statement, EndQuoteTerm ]
+            [ StartQuoteTerm, Sentence, EndQuoteTerm ]
 
         Conjunction ->
             [ OrConjunction, AndConjunction ]
@@ -377,6 +383,9 @@ processFailedResult string model state queue loopDetectionDict parentState newPo
 
         OpenParenthesisInOperatorTerm ->
             dropNextStatesAndWalk 2
+
+        OpenParenthesisTerm ->
+            dropNextStatesAndWalk 4
 
         KeywordTerm ->
             walk string model (UnknownKeywordTerm :: queue) loopDetectionDict parentState newPosition
@@ -468,6 +477,9 @@ processSuccessfulResult result string model state queue loopDetectionDict parent
 
         IsNotInTerm ->
             dropAheadAndWalk 3
+
+        OpenParenthesisTerm ->
+            dropAheadAndWalk 1
 
         IsInTerm ->
             dropAheadAndWalk 2

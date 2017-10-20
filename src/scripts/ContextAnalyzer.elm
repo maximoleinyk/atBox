@@ -1,7 +1,7 @@
 module ContextAnalyzer exposing (run, run2)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (CursorContext(JoinerContext, KeywordContext, NoContext, OperatorContext, ValueContext, ValueSeparatorContext), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(AndTerm, CloseParenthesisInOperatorTerm, CloseParenthesisTerm, CommaTerm, ContainsTerm, EitherOrTerm, EndQuoteTerm, IsEitherTerm, IsInTerm, IsNeitherTerm, IsNotInTerm, IsNotTerm, IsTerm, KeywordTerm, NeitherNorTerm, OpenParenthesisInOperatorTerm, OpenParenthesisTerm, OrTerm, SpaceTerm, StartQuoteTerm, Statement, UnknownKeywordTerm, WordTerm), ValueType(ValueStringType))
+import GlobalTypes exposing (CursorContext(JoinerContext, KeywordContext, NoContext, OperatorContext, ValueContext, ValueSeparatorContext), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(AndTerm, CloseParenthesisInOperatorTerm, CloseParenthesisTerm, CommaTerm, ContainsTerm, EitherOrTerm, EndQuoteTerm, IsEitherTerm, IsInTerm, IsNeitherTerm, IsNotInTerm, IsNotTerm, IsTerm, KeywordTerm, NeitherNorTerm, OpenParenthesisInOperatorTerm, OpenParenthesisTerm, OrTerm, Sentence, SpaceTerm, StartQuoteTerm, UnknownKeywordTerm, WordTerm), ValueType(ValueStringType))
 import Regex exposing (HowMany(All))
 import Tokenizer
 import Utils
@@ -540,7 +540,7 @@ collectTermsForState memo itemsToDrop =
                         || next
                         == OpenParenthesisTerm
                         || next
-                        == Statement
+                        == Sentence
                         || next
                         == StartQuoteTerm
                         || next

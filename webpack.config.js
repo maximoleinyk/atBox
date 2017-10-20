@@ -1,3 +1,5 @@
+var webpack = require('webpack');
+
 module.exports = {
   entry: __dirname + '/src/scripts/Main.elm',
   
@@ -31,6 +33,34 @@ module.exports = {
     
     noParse: /\.elm$/
   },
+  
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+      uglifyOptions: {
+        ecma: 5,
+        parse: {
+          bare_returns: false,
+          ecma: 5,
+          html5_comments: true,
+          shebang: true
+        },
+        mangle: {
+          keep_fnames: true
+        },
+        output: {
+          comments: false,
+          beautify: false
+        },
+        ie8: false,
+        comments: false
+      },
+      parallel: {
+        cache: true,
+        workers: 2
+      },
+      sourceMap: true
+    })
+  ],
   
   devServer: {
     inline: true,

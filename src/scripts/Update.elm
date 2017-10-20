@@ -14,23 +14,8 @@ import Translator
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Init ->
-            update Process model
-
-        Focus ->
-            update GetCursorPosition { model | focused = True }
-
-        GetCursorPosition ->
-            ( model, getCursorPosition "" )
-
-        UpdateCursorPosition newCursorIndex ->
-            update Process { model | cursorIndex = newCursorIndex }
-
-        UpdateValue newValue ->
-            update GetCursorPosition { model | value = newValue }
-
-        Process ->
+    let
+        getOutput =
             let
                 ( tokens, remainingStates ) =
                     Tokenizer.run model.value model
@@ -49,6 +34,29 @@ update msg model =
 
                 result =
                     FsmResponse tokens lexemes ast output
+            in
+            ( context, result )
+    in
+    case msg of
+        Init ->
+            update Process model
+
+        Focus ->
+            update GetCursorPosition { model | focused = model.autoSuggest }
+
+        GetCursorPosition ->
+            ( model, getCursorPosition "" )
+
+        UpdateCursorPosition newCursorIndex ->
+            update Process { model | cursorIndex = newCursorIndex }
+
+        UpdateValue newValue ->
+            update GetCursorPosition { model | value = newValue }
+
+        Process ->
+            let
+                ( context, result ) =
+                    getOutput
 
                 command =
                     emitData (Encoders.encodeFsmResponse result)
@@ -76,23 +84,8 @@ update msg model =
 
         EnterKeyPressed ->
             let
-                ( tokens, remainingStates ) =
-                    Tokenizer.run model.value model
-
-                lexemes =
-                    Lexer.run tokens model
-
-                context =
-                    ContextAnalyzer.run model.value tokens lexemes model remainingStates
-
-                ast =
-                    Parser.run lexemes model
-
-                output =
-                    Translator.run ast model
-
-                result =
-                    FsmResponse tokens lexemes ast output
+                ( context, result ) =
+                    getOutput
 
                 command =
                     emitDataOnEnterKey (Encoders.encodeFsmResponse result)

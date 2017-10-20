@@ -23,7 +23,7 @@ encodeAst =
                     ]
 
             Leaf value ->
-                encodeToString value
+                encodeStringValue value
 
             Null ->
                 null
@@ -86,7 +86,7 @@ encodeTokens =
             f =
                 \t ->
                     object
-                        [ ( "state", encodeToString t.state )
+                        [ ( "state", encodeStringValue t.state )
                         , ( "value", string t.value )
                         , ( "index", int t.index )
                         ]
@@ -101,7 +101,7 @@ encodeLexemes =
             f =
                 \l ->
                     object
-                        [ ( "state", encodeToString l.state )
+                        [ ( "state", encodeStringValue l.state )
                         , ( "value", string l.value )
                         , ( "index", int l.index )
                         ]
@@ -156,5 +156,5 @@ encodeTranslatorOutput =
                 null
 
 
-encodeToString =
+encodeStringValue =
     \encodeSimpleType -> string (toString encodeSimpleType)

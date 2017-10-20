@@ -6,14 +6,6 @@
   "directories": {
     "test": "tests"
   },
-  "dependencies": {
-    "elm-webpack-loader": "^4.3.1",
-    "file-loader": "^1.1.5",
-    "normalize.css": "^7.0.0",
-    "object-assign": "^4.1.1",
-    "webpack-dev-server": "^2.9.2"
-  },
-  "devDependencies": {},
   "scripts": {
     "watch": "webpack --watch",
     "test": "elm test",
@@ -29,5 +21,15 @@
   "bugs": {
     "url": "https://github.com/maximoleinyk/atBox/issues"
   },
-  "homepage": "https://github.com/maximoleinyk/atBox#readme"
+  "homepage": "https://github.com/maximoleinyk/atBox#readme",
+  "dependencies": {
+    "elm-webpack-loader": "^4.3.1",
+    "file-loader": "^1.1.5",
+    "normalize.css": "^7.0.0",
+    "object-assign": "^4.1.1",
+    "webpack-dev-server": "^2.9.2"
+  },
+  "devDependencies": {
+    "webpack": "^3.8.1"
+  }
 }
