@@ -51,7 +51,7 @@ suite =
                           , index = 21
                           }
                         , { state = LexemeValue
-                          , value = "Maksym Oliinyk"
+                          , value = "\"Maksym Oliinyk\""
                           , index = 24
                           }
                         ]

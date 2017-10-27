@@ -3,7 +3,7 @@ module Update exposing (update)
 import ContextAnalyzer
 import Dom
 import Encoders
-import GlobalTypes exposing (FsmResponse, Model, Msg(EnterKeyPressed, Focus, FocusResult, GetCursorPosition, Init, Process, SelectHighlightedValue, UpdateCursorPosition, UpdateValue))
+import GlobalTypes exposing (FsmResponse, Model, Msg(ArrowDownPressed, ArrowLeftPressed, ArrowRightPressed, ArrowUpPressed, EnterKeyPressed, Focus, FocusResult, GetCursorPosition, Init, Process, SelectHighlightedValue, UpdateCursorPosition, UpdateValue))
 import Lexer
 import Parser
 import Ports exposing (emitData, emitDataOnEnterKey, getCursorPosition)
@@ -91,6 +91,18 @@ update msg model =
                     emitDataOnEnterKey (Encoders.encodeFsmResponse result)
             in
             ( { model | context = context }, command )
+
+        ArrowLeftPressed ->
+            update GetCursorPosition model
+
+        ArrowRightPressed ->
+            update GetCursorPosition model
+
+        ArrowUpPressed ->
+            update GetCursorPosition model
+
+        ArrowDownPressed ->
+            update GetCursorPosition model
 
         _ ->
             ( model, Cmd.none )

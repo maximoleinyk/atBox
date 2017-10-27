@@ -1,4 +1,4 @@
-module Tokenizer exposing (getPossibleStates, isTermState, run)
+module Tokenizer exposing (getChildStates, isTermState, run)
 
 import Dict exposing (Dict)
 import GlobalTypes exposing (Model, Token, TokenState(..))
@@ -255,7 +255,7 @@ walk string model queue loopDetectionDict parentState position =
     else
         -- assess queue of upcoming states
         case queue of
-            -- is queue is empty it means we finished parsing
+            -- if queue is empty it means we finished parsing
             [] ->
                 ( [], queue )
 
@@ -264,7 +264,7 @@ walk string model queue loopDetectionDict parentState position =
                 let
                     -- get list of next states
                     possibleStates =
-                        getPossibleStates state
+                        getChildStates state
 
                     -- prepend states of the current state to the rest
                     newStatesQueue =
@@ -297,11 +297,11 @@ walk string model queue loopDetectionDict parentState position =
 
 isTermState : TokenState -> Bool
 isTermState state =
-    List.length (getPossibleStates state) == 0
+    List.length (getChildStates state) == 0
 
 
-getPossibleStates : TokenState -> List TokenState
-getPossibleStates state =
+getChildStates : TokenState -> List TokenState
+getChildStates state =
     case state of
         Start ->
             [ Sentence, Criteria, Start ]
@@ -334,10 +334,10 @@ getPossibleStates state =
             [ IsNotTerm, SpaceTerm, TokenValue ]
 
         IsInOperator ->
-            [ IsInTerm, Sentence, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
+            [ IsInTerm, Sentence, OpenParenthesisInOperatorTerm, SpaceTerm, CommaSeparatedValue, SpaceTerm, CloseParenthesisInOperatorTerm ]
 
         IsNotInOperator ->
-            [ IsNotInTerm, Sentence, OpenParenthesisInOperatorTerm, CommaSeparatedValue, CloseParenthesisInOperatorTerm ]
+            [ IsNotInTerm, Sentence, OpenParenthesisInOperatorTerm, SpaceTerm, CommaSeparatedValue, SpaceTerm, CloseParenthesisInOperatorTerm ]
 
         IsEitherOperator ->
             [ IsEitherTerm, SpaceTerm, TokenValue, SpaceTerm, EitherOrTerm, SpaceTerm, TokenValue ]
@@ -346,7 +346,7 @@ getPossibleStates state =
             [ IsNeitherTerm, SpaceTerm, TokenValue, SpaceTerm, NeitherNorTerm, SpaceTerm, TokenValue ]
 
         CommaSeparatedValue ->
-            [ SpaceTerm, TokenValue, CommaTerm, SpaceTerm, CommaSeparatedValue ]
+            [ TokenValue, SpaceTerm, CommaTerm, SpaceTerm, CommaSeparatedValue ]
 
         TokenValue ->
             [ QuotedWord, Word ]
@@ -400,10 +400,10 @@ processFailedResult string model state queue loopDetectionDict parentState newPo
             dropNextStatesAndWalk 2
 
         IsInTerm ->
-            dropNextStatesAndWalk 4
+            dropNextStatesAndWalk 6
 
         IsNotInTerm ->
-            dropNextStatesAndWalk 4
+            dropNextStatesAndWalk 6
 
         IsEitherTerm ->
             dropNextStatesAndWalk 6
@@ -446,7 +446,7 @@ processSuccessfulResult result string model state queue loopDetectionDict parent
             \n ->
                 let
                     possibleStates =
-                        List.drop 1 (getPossibleStates parentState)
+                        List.drop 1 (getChildStates parentState)
 
                     numberOfItemsToDrop =
                         List.length possibleStates + n

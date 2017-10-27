@@ -90,16 +90,15 @@ type Msg
     | EnterKeyPressed
     | ArrowUpPressed
     | ArrowDownPressed
-    | TabKeyPressed
+    | ArrowLeftPressed
+    | ArrowRightPressed
     | GetCursorPosition
     | Init
     | Focus
-    | Blur
     | Process
     | UpdateCursorPosition Int
-    | UpdateCursorPositionFailed
-    | ArrowLeftPressed
-    | ArrowRightPressed
+    | Blur
+    | TabKeyPressed
     | FocusResult (Result Dom.Error ())
 
 

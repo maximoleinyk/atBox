@@ -1,28 +1,14 @@
-module ContextAnalyzer exposing (run, run2)
+module ContextAnalyzer exposing (run)
 
 import Dict exposing (Dict)
-import GlobalTypes exposing (CursorContext(JoinerContext, KeywordContext, NoContext, OperatorContext, ValueContext, ValueSeparatorContext), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType), QueryField, Token, TokenState(AndTerm, CloseParenthesisInOperatorTerm, CloseParenthesisTerm, CommaTerm, ContainsTerm, EitherOrTerm, EndQuoteTerm, IsEitherTerm, IsInTerm, IsNeitherTerm, IsNotInTerm, IsNotTerm, IsTerm, KeywordTerm, NeitherNorTerm, OpenParenthesisInOperatorTerm, OpenParenthesisTerm, OrTerm, Sentence, SpaceTerm, StartQuoteTerm, UnknownKeywordTerm, WordTerm), ValueType(ValueStringType))
+import GlobalTypes exposing (CursorContext(JoinerContext, KeywordContext, NoContext, OperatorContext, ValueContext, ValueSeparatorContext), Lexeme, LexemeState(Field, Joiner, LeftParenthesis, LexemeValue, Operator, RightParenthesis, UnknownField), Model, OperatorType(IsEitherType, IsInType, IsNeitherType, IsNotInType, IsType), QueryField, Token, TokenState(AndTerm, CloseParenthesisInOperatorTerm, CloseParenthesisTerm, CommaTerm, ContainsTerm, EitherOrTerm, EndQuoteTerm, IsEitherTerm, IsInTerm, IsNeitherTerm, IsNotInTerm, IsNotTerm, IsTerm, KeywordTerm, NeitherNorTerm, OpenParenthesisInOperatorTerm, OpenParenthesisTerm, OrTerm, Sentence, SpaceTerm, StartQuoteTerm, UnknownKeywordTerm, WordTerm), ValueType(ValueStringType))
 import Regex exposing (HowMany(All))
 import Tokenizer
-import Utils
+import Utils exposing (isNothing)
 
 
-getQueryFields : List QueryField -> Dict String String -> Dict String String
-getQueryFields queryFields dict =
-    case queryFields of
-        [] ->
-            dict
-
-        next :: rest ->
-            let
-                newDict =
-                    Dict.insert next.field next.label dict
-            in
-            getQueryFields rest newDict
-
-
-getLexemeBeforePosition : List Lexeme -> Int -> Maybe Lexeme
-getLexemeBeforePosition lexemes position =
+getLexemeBeforePosition : Int -> List Lexeme -> Maybe Lexeme
+getLexemeBeforePosition position lexemes =
     case lexemes of
         [] ->
             Nothing
@@ -37,40 +23,59 @@ getLexemeBeforePosition lexemes position =
             let
                 lexemeFullLength =
                     y.index + String.length y.value
+
+                nextLexemes =
+                    if position >= lexemeFullLength then
+                        [ y ] ++ rest
+                    else
+                        [ x ]
             in
-            if position >= lexemeFullLength then
-                getLexemeBeforePosition ([ y ] ++ rest) position
-            else if position == 0 then
-                Nothing
-            else
-                Just x
+            getLexemeBeforePosition position nextLexemes
 
 
-getTokenAtCursorPosition : List Token -> Int -> Maybe Token
-getTokenAtCursorPosition tokens cursorPosition =
+getTokenAtCursorPosition : Int -> List Token -> Maybe Token
+getTokenAtCursorPosition position tokens =
     case tokens of
         [] ->
             Nothing
 
-        current :: rest ->
+        [ x ] ->
+            if position == 0 then
+                Nothing
+            else
+                Just x
+
+        x :: y :: rest ->
             let
                 fullLength =
-                    current.index + String.length current.value
+                    y.index + String.length y.value
+
+                nextLexemes =
+                    if position >= fullLength then
+                        [ y ] ++ rest
+                    else
+                        [ x ]
             in
-            if cursorPosition > fullLength then
-                getTokenAtCursorPosition rest cursorPosition
-            else
-                Just current
+            getTokenAtCursorPosition position nextLexemes
 
 
-getQueryString : String -> Maybe Token -> Int -> String
-getQueryString string token cursorPosition =
-    case token of
-        Nothing ->
-            ""
+processKeywordContext : Model -> String -> CursorContext
+processKeywordContext model query =
+    let
+        queryFields =
+            \fields dict ->
+                case fields of
+                    [] ->
+                        dict
 
-        Just lexeme ->
-            String.slice lexeme.index cursorPosition string
+                    next :: rest ->
+                        let
+                            newDict =
+                                Dict.insert next.field next.label dict
+                        in
+                        queryFields rest newDict
+    in
+    KeywordContext (queryFields model.queryFields Dict.empty) query
 
 
 processOperatorsContext : String -> CursorContext
@@ -88,15 +93,6 @@ processOperatorsContext query =
                 ]
     in
     OperatorContext operators query
-
-
-processKeywordContext : Model -> String -> CursorContext
-processKeywordContext model query =
-    let
-        queryFields =
-            getQueryFields model.queryFields Dict.empty
-    in
-    KeywordContext queryFields query
 
 
 processJoinerContext : String -> String -> CursorContext
@@ -144,331 +140,244 @@ getQueryField queryFields fieldName =
             field
 
 
-getValues : QueryField -> Dict String String
-getValues queryField =
-    if queryField.fieldType == "enum" then
-        Dict.fromList (List.map (\v -> ( v, v )) queryField.values)
-    else
-        Dict.empty
-
-
-processValueContext : String -> List Lexeme -> Lexeme -> OperatorType -> Token -> Model -> CursorContext
-processValueContext originalString lexemes fieldLexeme operatorType token model =
+processValueContext : String -> List Lexeme -> Model -> Lexeme -> OperatorType -> Token -> CursorContext
+processValueContext originalString lexemes model fieldLexeme operatorType token =
     let
-        queryFieldName : String
-        queryFieldName =
-            Utils.replace model.keywordDelimiter "" fieldLexeme.value
-
-        queryField : QueryField
-        queryField =
-            getQueryField model.queryFields queryFieldName
-
-        values : Dict String String
-        values =
-            getValues queryField
-
-        currentLexemeValue : String
-        currentLexemeValue =
-            let
-                fieldLexeme =
-                    getLexemeBeforePosition lexemes (token.index + String.length token.value)
-            in
-            case fieldLexeme of
-                Nothing ->
-                    ""
-
-                Just l ->
-                    String.trim l.value
+        result =
+            getLexemeBeforePosition fieldLexeme.index lexemes
     in
-    case token.state of
-        SpaceTerm ->
-            case operatorType of
-                IsEitherType ->
-                    let
-                        l =
-                            List.length (String.split " or " currentLexemeValue)
-                    in
-                    if currentLexemeValue == "" then
-                        ValueContext values token.value
-                    else if l == 1 then
-                        if String.contains " or" currentLexemeValue then
-                            ValueContext values token.value
-                        else
-                            ValueSeparatorContext ValueStringType (Dict.fromList [ ( "or", "or" ) ]) token.value
-                    else
-                        processJoinerContext originalString token.value
-
-                IsNeitherType ->
-                    let
-                        l =
-                            List.length (String.split " nor " currentLexemeValue)
-                    in
-                    if currentLexemeValue == "" then
-                        ValueContext values token.value
-                    else if l == 1 then
-                        if String.contains " nor" currentLexemeValue then
-                            ValueContext values token.value
-                        else
-                            ValueSeparatorContext ValueStringType (Dict.fromList [ ( "nor", "nor" ) ]) token.value
-                    else
-                        processJoinerContext originalString token.value
-
-                IsInType ->
-                    ValueSeparatorContext ValueStringType (Dict.fromList [ ( "comma", "," ) ]) token.value
-
-                IsNotInType ->
-                    ValueSeparatorContext ValueStringType (Dict.fromList [ ( "comma", "," ) ]) token.value
-
-                _ ->
-                    ValueContext values token.value
-
-        WordTerm ->
-            ValueContext values token.value
-
-        -- unreachable context
-        _ ->
+    case result of
+        Nothing ->
             NoContext
 
+        Just f ->
+            let
+                queryFieldName =
+                    Utils.replace model.keywordDelimiter "" fieldLexeme.value
 
-getContext : List Lexeme -> String -> Maybe Token -> Maybe Lexeme -> Int -> Model -> CursorContext
-getContext lexemes originalString token lexeme cursorPosition model =
-    let
-        queryString =
-            getQueryString originalString token cursorPosition
+                queryField =
+                    getQueryField model.queryFields queryFieldName
 
-        processValue : Lexeme -> Token -> OperatorType -> CursorContext
-        processValue =
-            \l t operatorType ->
-                let
-                    fieldLexeme =
-                        getLexemeBeforePosition lexemes l.index
-                in
-                case fieldLexeme of
-                    Nothing ->
-                        -- unreachable case
-                        NoContext
+                values =
+                    if queryField.fieldType == "enum" then
+                        Dict.fromList (List.map (\v -> ( v, v )) queryField.values)
+                    else
+                        Dict.empty
 
-                    Just f ->
-                        processValueContext originalString lexemes f operatorType t model
-    in
-    case token of
-        Nothing ->
-            case lexeme of
-                Nothing ->
-                    processKeywordContext model queryString
-
-                _ ->
-                    NoContext
-
-        Just token ->
-            case token.state of
-                UnknownKeywordTerm ->
-                    case lexeme of
-                        -- "find a person whose @| "
+                currentLexemeValue =
+                    let
+                        fieldLexeme =
+                            getLexemeBeforePosition (token.index + String.length token.value) lexemes
+                    in
+                    case fieldLexeme of
                         Nothing ->
-                            processKeywordContext model queryString
+                            ""
 
-                        Just lexeme ->
-                            case lexeme.state of
-                                -- "... and @| "
-                                Joiner ->
-                                    processKeywordContext model queryString
+                        Just l ->
+                            l.value
+            in
+            case token.state of
+                SpaceTerm ->
+                    case operatorType of
+                        IsEitherType ->
+                            let
+                                l =
+                                    List.length (String.split " or " currentLexemeValue)
+                            in
+                            if currentLexemeValue == "" then
+                                ValueContext values token.value
+                            else if l == 1 then
+                                if String.contains " or" currentLexemeValue then
+                                    ValueContext values token.value
+                                else
+                                    ValueSeparatorContext ValueStringType (Dict.fromList [ ( "or", "or" ) ]) token.value
+                            else
+                                processJoinerContext originalString token.value
 
-                                -- "(@| "
-                                LeftParenthesis ->
-                                    processKeywordContext model queryString
+                        IsNeitherType ->
+                            let
+                                l =
+                                    List.length (String.split " nor " currentLexemeValue)
+                            in
+                            if currentLexemeValue == "" then
+                                ValueContext values token.value
+                            else if l == 1 then
+                                if String.contains " nor" currentLexemeValue then
+                                    ValueContext values token.value
+                                else
+                                    ValueSeparatorContext ValueStringType (Dict.fromList [ ( "nor", "nor" ) ]) token.value
+                            else
+                                processJoinerContext originalString token.value
 
-                                -- unreachable condition
-                                _ ->
-                                    NoContext
+                        IsInType ->
+                            ValueSeparatorContext ValueStringType (Dict.fromList [ ( "comma", "," ) ]) token.value
 
-                KeywordTerm ->
-                    -- "find a person whose @name|"
-                    processKeywordContext model queryString
+                        IsNotInType ->
+                            ValueSeparatorContext ValueStringType (Dict.fromList [ ( "comma", "," ) ]) token.value
+
+                        _ ->
+                            ValueContext values token.value
 
                 WordTerm ->
-                    case lexeme of
-                        Nothing ->
-                            -- "find a person|
-                            NoContext
+                    ValueContext values token.value
 
-                        Just lexeme ->
-                            case lexeme.state of
-                                -- "@name word|
-                                Field ->
-                                    processOperatorsContext queryString
-
-                                -- "@name is message|
-                                Operator t ->
-                                    processValue lexeme token t
-
-                                -- "@name is Max Oliinyk|
-                                LexemeValue ->
-                                    processJoinerContext originalString queryString
-
-                                _ ->
-                                    NoContext
-
-                SpaceTerm ->
-                    case lexeme of
-                        -- "      |
-                        Nothing ->
-                            processKeywordContext model queryString
-
-                        Just lexeme ->
-                            case lexeme.state of
-                                -- "@name  |
-                                Field ->
-                                    processOperatorsContext ""
-
-                                -- "@nonexisting  |
-                                UnknownField ->
-                                    processOperatorsContext ""
-
-                                LexemeValue ->
-                                    -- "@name is Max  |
-                                    if lexeme.value /= "" then
-                                        processJoinerContext originalString queryString
-                                    else
-                                        -- "@name is |
-                                        let
-                                            operatorLexeme =
-                                                getLexemeBeforePosition lexemes lexeme.index
-                                        in
-                                        case operatorLexeme of
-                                            Nothing ->
-                                                -- unreachable
-                                                NoContext
-
-                                            Just lexeme ->
-                                                case lexeme.state of
-                                                    Operator t ->
-                                                        processValue lexeme token t
-
-                                                    _ ->
-                                                        -- unreachable
-                                                        NoContext
-
-                                -- "@name is Max and    |
-                                Joiner ->
-                                    processKeywordContext model queryString
-
-                                -- "@name is |
-                                -- "@name is not |
-                                -- "@name is not in |
-                                -- "@name is either |
-                                Operator t ->
-                                    processValue lexeme token t
-
-                                -- ")   |
-                                RightParenthesis ->
-                                    processJoinerContext originalString queryString
-
-                                -- "and (  |
-                                LeftParenthesis ->
-                                    processKeywordContext model queryString
-
-                IsEitherTerm ->
-                    case lexeme of
-                        -- unreachable
-                        Nothing ->
-                            NoContext
-
-                        -- "@name is either|
-                        Just lexeme ->
-                            processOperatorsContext queryString
-
-                IsNeitherTerm ->
-                    case lexeme of
-                        -- unreachable
-                        Nothing ->
-                            NoContext
-
-                        -- "@name is neither|
-                        Just lexeme ->
-                            processOperatorsContext queryString
-
-                IsInTerm ->
-                    case lexeme of
-                        -- unreachable
-                        Nothing ->
-                            NoContext
-
-                        Just lexeme ->
-                            case lexeme.state of
-                                -- "@name is in|
-                                -- "@name is not in|
-                                Field ->
-                                    processOperatorsContext queryString
-
-                                _ ->
-                                    NoContext
-
-                IsTerm ->
-                    case lexeme of
-                        -- unreachable
-                        Nothing ->
-                            NoContext
-
-                        Just lexeme ->
-                            -- "@name is|
-                            processOperatorsContext token.value
-
-                IsNotTerm ->
-                    case lexeme of
-                        Nothing ->
-                            NoContext
-
-                        Just lexeme ->
-                            -- "@name is not|
-                            processOperatorsContext token.value
-
-                OpenParenthesisTerm ->
-                    processKeywordContext model queryString
-
-                CloseParenthesisTerm ->
-                    processJoinerContext originalString queryString
-
-                OrTerm ->
-                    case lexeme of
-                        -- unreachable
-                        Nothing ->
-                            NoContext
-
-                        Just lexeme ->
-                            case lexeme.state of
-                                -- "@name is Max or|
-                                LexemeValue ->
-                                    processJoinerContext originalString queryString
-
-                                -- "@name is Max or  |
-                                Joiner ->
-                                    processKeywordContext model queryString
-
-                                _ ->
-                                    NoContext
-
-                AndTerm ->
-                    case lexeme of
-                        -- unreachable
-                        Nothing ->
-                            NoContext
-
-                        Just lexeme ->
-                            case lexeme.state of
-                                -- "@name is Max and|
-                                LexemeValue ->
-                                    processJoinerContext originalString queryString
-
-                                -- "@name is Max and  |
-                                Joiner ->
-                                    processKeywordContext model queryString
-
-                                _ ->
-                                    NoContext
-
+                -- unreachable context
                 _ ->
                     NoContext
+
+
+isToken : Maybe Token -> TokenState -> Bool
+isToken token state =
+    case token of
+        Nothing ->
+            False
+
+        Just t ->
+            t.state == state
+
+
+isLexeme : Maybe Lexeme -> LexemeState -> Bool
+isLexeme lexeme state =
+    case lexeme of
+        Nothing ->
+            False
+
+        Just t ->
+            t.state == state
+
+
+getLexeme : Maybe Lexeme -> (Lexeme -> a) -> a
+getLexeme lexeme func =
+    case lexeme of
+        Nothing ->
+            func (Lexeme Field "" 0)
+
+        Just l ->
+            func l
+
+
+getToken : Maybe Token -> (Token -> a) -> a
+getToken token func =
+    case token of
+        Nothing ->
+            func (Token SpaceTerm "" 0)
+
+        Just t ->
+            func t
+
+
+getOperatorType : Maybe Lexeme -> (OperatorType -> b) -> b
+getOperatorType lexeme func =
+    case lexeme of
+        Nothing ->
+            func IsType
+
+        Just l ->
+            case l.state of
+                Operator t ->
+                    func t
+
+                _ ->
+                    func IsType
+
+
+isLexemeValueEmpty : Maybe Lexeme -> Bool
+isLexemeValueEmpty lexeme =
+    case lexeme of
+        Nothing ->
+            False
+
+        Just l ->
+            l.value == ""
+
+
+isLexemeBeforeEmptyValueWasOperator : List Lexeme -> Maybe Lexeme -> Bool
+isLexemeBeforeEmptyValueWasOperator lexemes lexeme =
+    case lexeme of
+        Nothing ->
+            False
+
+        Just lexeme ->
+            case lexeme.state of
+                LexemeValue ->
+                    let
+                        operatorLexeme =
+                            getLexemeBeforePosition lexeme.index lexemes
+                    in
+                    if lexeme.value == "" then
+                        case operatorLexeme of
+                            Nothing ->
+                                False
+
+                            Just lexeme ->
+                                case lexeme.state of
+                                    Operator t ->
+                                        True
+
+                                    _ ->
+                                        False
+                    else
+                        False
+
+                _ ->
+                    False
+
+
+getContext : List Lexeme -> String -> Maybe Token -> Maybe Lexeme -> String -> Model -> CursorContext
+getContext lexemes originalString token lexeme queryString model =
+    let
+        keywordContextConditions =
+            [ isNothing token
+            , isToken token UnknownKeywordTerm
+            , isToken token KeywordTerm
+            , isToken token OpenParenthesisTerm
+            , isToken token SpaceTerm && isNothing lexeme
+            , isToken token SpaceTerm && isLexeme lexeme Joiner
+            ]
+
+        operatorContextConditions =
+            [ isToken token WordTerm && isLexeme lexeme Field
+            , isToken token SpaceTerm && (isLexeme lexeme Field || isLexeme lexeme UnknownField)
+            , isToken token IsEitherTerm && not (isNothing lexeme)
+            , isToken token IsNeitherTerm && not (isNothing lexeme)
+            , isToken token IsInTerm && isLexeme lexeme Field
+            , isToken token IsNotInTerm && isLexeme lexeme Field
+            , isToken token IsTerm && not (isNothing lexeme)
+            , isToken token IsNotTerm && not (isNothing lexeme)
+            ]
+
+        valueContextConditions =
+            [ isToken token WordTerm && isLexeme lexeme (Operator (getOperatorType lexeme (\t -> t)))
+            , isToken token SpaceTerm && isLexeme lexeme (Operator (getOperatorType lexeme (\t -> t)))
+            , isToken token SpaceTerm && isLexemeBeforeEmptyValueWasOperator lexemes lexeme
+            ]
+
+        joinerContextConditions =
+            [ isToken token WordTerm && isLexeme lexeme LexemeValue
+            , isToken token SpaceTerm && isLexeme lexeme LexemeValue
+            , isToken token SpaceTerm && isLexeme lexeme RightParenthesis
+            , isToken token CloseParenthesisTerm
+            , isToken token CloseParenthesisInOperatorTerm
+            , isToken token OrTerm && isLexeme lexeme LexemeValue
+            , isToken token AndTerm && isLexeme lexeme LexemeValue
+            ]
+
+        any list =
+            List.any (\f -> f == True) list
+    in
+    if any keywordContextConditions then
+        processKeywordContext model queryString
+    else if any operatorContextConditions then
+        processOperatorsContext queryString
+    else if any valueContextConditions then
+        processValueContext originalString lexemes model
+            |> getLexeme lexeme
+            |> getOperatorType lexeme
+            |> getToken token
+    else if any joinerContextConditions then
+        processJoinerContext originalString queryString
+    else
+        NoContext
 
 
 run : String -> List Token -> List Lexeme -> Model -> List TokenState -> CursorContext
@@ -478,292 +387,28 @@ run string tokens lexemes model remainingStates =
             model.cursorIndex
 
         tokenAtCursorPosition =
-            getTokenAtCursorPosition tokens cursorPosition
+            getTokenAtCursorPosition cursorPosition tokens
 
         lexemeBeforeToken =
             case tokenAtCursorPosition of
                 Nothing ->
-                    getLexemeBeforePosition lexemes 0
+                    Nothing
 
                 Just token ->
-                    getLexemeBeforePosition lexemes token.index
+                    getLexemeBeforePosition (token.index + String.length token.value) lexemes
 
-        result =
-            getContext lexemes string tokenAtCursorPosition lexemeBeforeToken cursorPosition model
-    in
-    result
-
-
-getNextNonSpaceTokenState : List TokenState -> Maybe TokenState
-getNextNonSpaceTokenState remainingStates =
-    case remainingStates of
-        [] ->
-            Nothing
-
-        next :: rest ->
-            case next of
-                SpaceTerm ->
-                    getNextNonSpaceTokenState rest
-
-                WordTerm ->
-                    getNextNonSpaceTokenState rest
-
-                CloseParenthesisTerm ->
-                    getNextNonSpaceTokenState rest
-
-                OpenParenthesisTerm ->
-                    getNextNonSpaceTokenState rest
-
-                StartQuoteTerm ->
-                    getNextNonSpaceTokenState rest
-
-                EndQuoteTerm ->
-                    getNextNonSpaceTokenState rest
-
-                _ ->
-                    Just next
-
-
-collectTermsForState : List TokenState -> Int -> List TokenState
-collectTermsForState memo itemsToDrop =
-    case memo of
-        [] ->
-            memo
-
-        next :: rest ->
-            if Tokenizer.isTermState next then
-                if
-                    next
-                        == SpaceTerm
-                        || next
-                        == CloseParenthesisTerm
-                        || next
-                        == OpenParenthesisTerm
-                        || next
-                        == Sentence
-                        || next
-                        == StartQuoteTerm
-                        || next
-                        == EndQuoteTerm
-                        || next
-                        == OpenParenthesisInOperatorTerm
-                        || next
-                        == CloseParenthesisInOperatorTerm
-                then
-                    collectTermsForState rest (itemsToDrop + 1)
-                else
-                    let
-                        newMemo =
-                            List.drop itemsToDrop rest
-
-                        newLength =
-                            List.length newMemo
-                    in
-                    [ next ] ++ collectTermsForState newMemo newLength
-            else
-                let
-                    newPossibleStates =
-                        Tokenizer.getPossibleStates next
-
-                    newMemo =
-                        newPossibleStates ++ rest
-
-                    newItemsToDrop =
-                        List.length newPossibleStates - 1
-                in
-                collectTermsForState newMemo newItemsToDrop
-
-
-getNextPossibleOptions : Maybe TokenState -> List TokenState
-getNextPossibleOptions tokenState =
-    case tokenState of
-        Nothing ->
-            []
-
-        Just state ->
-            let
-                isTermState =
-                    Tokenizer.isTermState state
-            in
-            if isTermState then
-                [ state ]
-            else
-                let
-                    possibleStates =
-                        Tokenizer.getPossibleStates state
-                in
-                collectTermsForState possibleStates (List.length possibleStates - 1)
-
-
-getTokenStateMapping : TokenState -> ( String, String )
-getTokenStateMapping tokenState =
-    case tokenState of
-        StartQuoteTerm ->
-            ( "start_quote_term", "\"" )
-
-        EndQuoteTerm ->
-            ( "end_quote_term", "\"" )
-
-        EitherOrTerm ->
-            ( "either_or_term", "or" )
-
-        AndTerm ->
-            ( "and_term", "and" )
-
-        OrTerm ->
-            ( "or_term", "or" )
-
-        NeitherNorTerm ->
-            ( "neither_nor_term", "nor" )
-
-        IsNotTerm ->
-            ( "is_not_term", "is not" )
-
-        IsTerm ->
-            ( "is_term", "is" )
-
-        IsEitherTerm ->
-            ( "is_either_term", "is neither" )
-
-        IsNeitherTerm ->
-            ( "is_neither_term", "is neither" )
-
-        IsInTerm ->
-            ( "is_in_term", "is in" )
-
-        IsNotInTerm ->
-            ( "is_not_in_term", "is not in" )
-
-        ContainsTerm ->
-            ( "like", "contains" )
-
-        OpenParenthesisInOperatorTerm ->
-            ( "open_parenthesis_in_term", "(" )
-
-        CloseParenthesisInOperatorTerm ->
-            ( "close_parenthesis_in_term", ")" )
-
-        CommaTerm ->
-            ( "comma", "," )
-
-        OpenParenthesisTerm ->
-            ( "open_parenthesis_term", "(" )
-
-        CloseParenthesisTerm ->
-            ( "close_parenthesis_term", ")" )
-
-        _ ->
-            ( "", "" )
-
-
-convertOperators : List TokenState -> Dict String String -> Dict String String
-convertOperators states memo =
-    case states of
-        [] ->
-            memo
-
-        next :: rest ->
-            let
-                ( key, value ) =
-                    getTokenStateMapping next
-
-                newMemo =
-                    if key == "" then
-                        memo
-                    else
-                        Dict.insert key value memo
-            in
-            convertOperators rest newMemo
-
-
-getContext2 : Maybe TokenState -> Maybe Token -> Maybe Lexeme -> List TokenState -> Model -> CursorContext
-getContext2 nextTokenState token lexemeBeforeToken nextPossibleTokenStates model =
-    let
-        tokenValue =
-            case token of
-                Nothing ->
-                    ""
-
-                Just token ->
-                    token.value
-
-        --        a =
-        --            Debug.log "tokenValue" tokenValue
-        --
-        --        b =
-        --            Debug.log "nextPossibleTokenStates" nextPossibleTokenStates
-    in
-    case lexemeBeforeToken of
-        Nothing ->
-            processKeywordContext model tokenValue
-
-        Just lexemeBefore ->
-            let
-                lexemeValue =
-                    lexemeBefore.value
-
-                convertedOperators =
-                    convertOperators nextPossibleTokenStates Dict.empty
-            in
-            case lexemeBefore.state of
-                Field ->
-                    OperatorContext convertedOperators tokenValue
-
-                UnknownField ->
-                    OperatorContext convertedOperators tokenValue
-
-                Operator t ->
-                    OperatorContext convertedOperators tokenValue
-
-                LexemeValue ->
-                    JoinerContext Dict.empty tokenValue
-
-                Joiner ->
-                    KeywordContext Dict.empty tokenValue
-
-                LeftParenthesis ->
-                    KeywordContext Dict.empty tokenValue
-
-                RightParenthesis ->
-                    JoinerContext Dict.empty tokenValue
-
-
-run2 : String -> List Token -> List Lexeme -> Model -> List TokenState -> CursorContext
-run2 originalString tokens lexemes model remainingStates =
-    let
-        tokenAtCursorPosition =
-            getTokenAtCursorPosition tokens model.cursorIndex
-
-        lexemeBeforeToken =
+        queryString =
             case tokenAtCursorPosition of
                 Nothing ->
-                    getLexemeBeforePosition lexemes 0
+                    String.slice 0 cursorPosition string
 
                 Just token ->
-                    getLexemeBeforePosition lexemes token.index
+                    String.slice token.index cursorPosition string
 
-        nextNonSpaceTokenState =
-            getNextNonSpaceTokenState remainingStates
-
-        suggestItems =
-            getNextPossibleOptions nextNonSpaceTokenState
+        a =
+            Debug.log "token" tokenAtCursorPosition
 
         result =
-            getContext2 nextNonSpaceTokenState tokenAtCursorPosition lexemeBeforeToken suggestItems model
-
-        b =
-            Debug.log "nextNonSpaceTokenState" nextNonSpaceTokenState
-
-        c =
-            Debug.log "tokenAtCursorPosition" tokenAtCursorPosition
-
-        d =
-            Debug.log "lexemeBeforeToken" lexemeBeforeToken
-
-        k =
-            Debug.log "suggestItems" suggestItems
-
-        f =
-            Debug.log "-----------" "-----------"
+            getContext lexemes string tokenAtCursorPosition lexemeBeforeToken queryString model
     in
     result

@@ -87,14 +87,14 @@ body {
     background-color: #eee;
 }
 
-.meet-at-bot {
+.meet-at-box {
     color: #ccc;
     overflow: hidden;
     text-align: center;
     font-style: italic;
 }
-.meet-at-bot:before,
-.meet-at-bot:after {
+.meet-at-box:before,
+.meet-at-box:after {
     background-color: #ccc;
     content: "";
     display: inline-block;
@@ -103,11 +103,11 @@ body {
     vertical-align: middle;
     width: 50%;
 }
-.meet-at-bot:before {
+.meet-at-box:before {
     right: 0.5em;
     margin-left: -50%;
 }
-.meet-at-bot:after {
+.meet-at-box:after {
     left: 0.5em;
     margin-right: -50%;
 }

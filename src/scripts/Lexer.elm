@@ -102,9 +102,6 @@ parseSingleValue tokens model initialPosition endValuePosition =
                         stringResult =
                             String.join "" (List.map getString result)
 
-                        withoutQuotes =
-                            String.trim (String.split "\"" stringResult |> String.join "")
-
                         newTokens =
                             List.drop (List.length result) tokens
 
@@ -115,7 +112,7 @@ parseSingleValue tokens model initialPosition endValuePosition =
                     if List.length newTokens == List.length tokens then
                         nothing
                     else
-                        ( newTokens, Just (Lexeme LexemeValue withoutQuotes initialPosition), newPosition )
+                        ( newTokens, Just (Lexeme LexemeValue stringResult initialPosition), newPosition )
 
                 _ ->
                     nothing

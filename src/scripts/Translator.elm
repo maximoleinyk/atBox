@@ -59,7 +59,7 @@ getValue node =
         Leaf outputValueType ->
             case outputValueType of
                 SingleValue value ->
-                    Single value
+                    Single (String.trim value)
 
                 MultipleValues list ->
                     Multiple (List.map (\i -> String.trim i) list)
