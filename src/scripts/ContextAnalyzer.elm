@@ -226,24 +226,14 @@ processValueContext originalString lexemes model fieldLexeme operatorType token 
                     NoContext
 
 
-isToken : Maybe Token -> TokenState -> Bool
-isToken token state =
-    case token of
+is : Maybe { a | state : b } -> b -> Bool
+is object state =
+    case object of
         Nothing ->
             False
 
-        Just t ->
-            t.state == state
-
-
-isLexeme : Maybe Lexeme -> LexemeState -> Bool
-isLexeme lexeme state =
-    case lexeme of
-        Nothing ->
-            False
-
-        Just t ->
-            t.state == state
+        Just o ->
+            o.state == state
 
 
 getLexeme : Maybe Lexeme -> (Lexeme -> a) -> a
@@ -281,8 +271,8 @@ getOperatorType lexeme func =
                     func IsType
 
 
-isLexemeValueEmpty : Maybe Lexeme -> Bool
-isLexemeValueEmpty lexeme =
+isValueEmpty : Maybe Lexeme -> Bool
+isValueEmpty lexeme =
     case lexeme of
         Nothing ->
             False
@@ -291,8 +281,8 @@ isLexemeValueEmpty lexeme =
             l.value == ""
 
 
-isLexemeBeforeEmptyValueWasOperator : List Lexeme -> Maybe Lexeme -> Bool
-isLexemeBeforeEmptyValueWasOperator lexemes lexeme =
+isBeforeEmptyValueWasOperator : List Lexeme -> Maybe Lexeme -> Bool
+isBeforeEmptyValueWasOperator lexemes lexeme =
     case lexeme of
         Nothing ->
             False
@@ -328,38 +318,38 @@ getContext lexemes originalString token lexeme queryString model =
     let
         keywordContextConditions =
             [ isNothing token
-            , isToken token UnknownKeywordTerm
-            , isToken token KeywordTerm
-            , isToken token OpenParenthesisTerm
-            , isToken token SpaceTerm && isNothing lexeme
-            , isToken token SpaceTerm && isLexeme lexeme Joiner
+            , is token UnknownKeywordTerm
+            , is token KeywordTerm
+            , is token OpenParenthesisTerm
+            , is token SpaceTerm && isNothing lexeme
+            , is token SpaceTerm && is lexeme Joiner
             ]
 
         operatorContextConditions =
-            [ isToken token WordTerm && isLexeme lexeme Field
-            , isToken token SpaceTerm && (isLexeme lexeme Field || isLexeme lexeme UnknownField)
-            , isToken token IsEitherTerm && not (isNothing lexeme)
-            , isToken token IsNeitherTerm && not (isNothing lexeme)
-            , isToken token IsInTerm && isLexeme lexeme Field
-            , isToken token IsNotInTerm && isLexeme lexeme Field
-            , isToken token IsTerm && not (isNothing lexeme)
-            , isToken token IsNotTerm && not (isNothing lexeme)
+            [ is token WordTerm && is lexeme Field
+            , is token SpaceTerm && (is lexeme Field || is lexeme UnknownField)
+            , is token IsEitherTerm && not (isNothing lexeme)
+            , is token IsNeitherTerm && not (isNothing lexeme)
+            , is token IsInTerm && is lexeme Field
+            , is token IsNotInTerm && is lexeme Field
+            , is token IsTerm && not (isNothing lexeme)
+            , is token IsNotTerm && not (isNothing lexeme)
             ]
 
         valueContextConditions =
-            [ isToken token WordTerm && isLexeme lexeme (Operator (getOperatorType lexeme (\t -> t)))
-            , isToken token SpaceTerm && isLexeme lexeme (Operator (getOperatorType lexeme (\t -> t)))
-            , isToken token SpaceTerm && isLexemeBeforeEmptyValueWasOperator lexemes lexeme
+            [ is token WordTerm && is lexeme (Operator (getOperatorType lexeme (\t -> t)))
+            , is token SpaceTerm && is lexeme (Operator (getOperatorType lexeme (\t -> t)))
+            , is token SpaceTerm && isBeforeEmptyValueWasOperator lexemes lexeme
             ]
 
         joinerContextConditions =
-            [ isToken token WordTerm && isLexeme lexeme LexemeValue
-            , isToken token SpaceTerm && isLexeme lexeme LexemeValue
-            , isToken token SpaceTerm && isLexeme lexeme RightParenthesis
-            , isToken token CloseParenthesisTerm
-            , isToken token CloseParenthesisInOperatorTerm
-            , isToken token OrTerm && isLexeme lexeme LexemeValue
-            , isToken token AndTerm && isLexeme lexeme LexemeValue
+            [ is token WordTerm && is lexeme LexemeValue
+            , is token SpaceTerm && is lexeme LexemeValue
+            , is token SpaceTerm && is lexeme RightParenthesis
+            , is token CloseParenthesisTerm
+            , is token CloseParenthesisInOperatorTerm
+            , is token OrTerm && is lexeme LexemeValue
+            , is token AndTerm && is lexeme LexemeValue
             ]
 
         any list =
@@ -404,9 +394,6 @@ run string tokens lexemes model remainingStates =
 
                 Just token ->
                     String.slice token.index cursorPosition string
-
-        a =
-            Debug.log "token" tokenAtCursorPosition
 
         result =
             getContext lexemes string tokenAtCursorPosition lexemeBeforeToken queryString model
