@@ -1,6 +1,6 @@
 module Grammar exposing (run)
 
-import Parser as P
+import ParserUtils as P
     exposing
         ( Parser(..)
         , State(..)

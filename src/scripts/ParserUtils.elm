@@ -1,4 +1,4 @@
-module Parser exposing (..)
+module ParserUtils exposing (..)
 
 import Char
 
