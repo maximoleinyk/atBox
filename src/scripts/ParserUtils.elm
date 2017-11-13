@@ -1,55 +1,35 @@
-module ParserUtils
-    exposing
-        ( (|=)
-        , Parser
-        , State
-        , Step
-        , Token(..)
-        , apply
-        , identity
-        , keyword
-        , oneOf
-        , oneOrMore
-        , sentence
-        , sequence
-        , space
-        , squash
-        , symbol
-        , word
-        , zeroOrMore
-        )
+module Parser exposing (..)
+
+import Char
 
 
-type Token
-    = BoolToken Bool
-    | CharToken Char
-    | StringToken String
-    | WordToken String
-    | KeywordToken String
-
-
-type Step
-    = Step
-        { position : Int
+type Token a
+    = Token
+        { state : a
+        , position : Int
         , value : String
         }
-        Token
 
 
-type State
+type State a
     = State
         { source : String
         , offset : Int
-        , tokens : List Step
+        , tokens : List (Token a)
         }
 
 
-type Parser
-    = Parser (State -> Result String State)
+type Parser a
+    = Parser (State a -> Result String (State a))
 
 
-symbol : Char -> Parser
-symbol char =
+apply : State a -> Parser a -> Result String (State a)
+apply state (Parser parse) =
+    parse state
+
+
+symbol : (Char -> Bool) -> a -> Parser a
+symbol predicate context =
     Parser <|
         \((State { source, offset, tokens }) as initialState) ->
             let
@@ -58,21 +38,49 @@ symbol char =
 
                 result =
                     String.slice offset newOffset source
+
+                char =
+                    List.head <| String.toList result
             in
-            if result == String.fromChar char then
-                Ok
-                    (State
-                        { source = source
-                        , offset = newOffset
-                        , tokens = Step { position = offset, value = result } (CharToken char) :: tokens
-                        }
-                    )
-            else
-                Err ("Could not parse symbol: " ++ toString char)
+            case char of
+                Nothing ->
+                    Err "Cannot parse symbol"
+
+                Just char ->
+                    if predicate char then
+                        Ok
+                            (State
+                                { source = source
+                                , offset = newOffset
+                                , tokens = Token { state = context, position = offset, value = result } :: tokens
+                                }
+                            )
+                    else
+                        Err <| "Could not parse symbol: " ++ toString char
 
 
-squash : State -> State -> (String -> Token) -> State
-squash (State initialState) (State newState) getToken =
+keyword : String -> a -> Parser a
+keyword key context =
+    Parser <|
+        \initialState ->
+            let
+                mapper =
+                    \c -> symbol (\char -> Char.toLower char == c) context
+
+                result =
+                    apply initialState <|
+                        sequence (List.map mapper (String.toList (String.toLower key)))
+            in
+            case result of
+                Ok newState ->
+                    Ok (squash initialState newState context)
+
+                (Err _) as result ->
+                    result
+
+
+squash : State a -> State a -> a -> State a
+squash (State initialState) (State newState) context =
     let
         diff =
             List.length newState.tokens - List.length initialState.tokens
@@ -81,19 +89,61 @@ squash (State initialState) (State newState) getToken =
             List.take diff newState.tokens
 
         value =
-            List.foldl (\a b -> a ++ b) "" (List.map (\(Step ctx value) -> ctx.value) diffTokens)
+            List.foldl (\a b -> a ++ b) "" (List.map (\(Token data) -> data.value) diffTokens)
 
         newOffset =
             initialState.offset + String.length value
+
+        token =
+            Token { state = context, position = initialState.offset, value = value }
     in
     State
         { source = initialState.source
         , offset = newOffset
-        , tokens = Step { position = initialState.offset, value = value } (getToken value) :: initialState.tokens
+        , tokens = token :: initialState.tokens
         }
 
 
-runParserNTimes : Int -> Parser -> State -> Result String State
+parseAndFlip : (a -> Bool) -> Parser a -> Parser a -> Parser a
+parseAndFlip condition parserTrue parserFalse =
+    Parser <|
+        \initialState ->
+            let
+                helper =
+                    \((State { tokens }) as nextState) prevState initialState ->
+                        case List.head tokens of
+                            Just (Token { state }) ->
+                                if condition state then
+                                    case apply nextState parserTrue of
+                                        Ok value ->
+                                            if value == prevState then
+                                                Ok value
+                                            else
+                                                helper value nextState initialState
+
+                                        Err x ->
+                                            if nextState == initialState then
+                                                Err "flip: parse failed"
+                                            else
+                                                Ok nextState
+                                else
+                                    case apply nextState parserFalse of
+                                        Ok value ->
+                                            if value == prevState then
+                                                Ok value
+                                            else
+                                                helper value nextState initialState
+
+                                        Err x ->
+                                            Err "flip: parse failed"
+
+                            Nothing ->
+                                Err "flip: parse failed"
+            in
+            helper initialState initialState initialState
+
+
+runParserNTimes : Int -> Parser a -> State a -> Result String (State a)
 runParserNTimes requiredAmountOfTimes (Parser parse) ((State { source, offset, tokens }) as initialState) =
     let
         helperFunc minTimesMemo nextState =
@@ -103,40 +153,67 @@ runParserNTimes requiredAmountOfTimes (Parser parse) ((State { source, offset, t
 
                 Err _ ->
                     if minTimesMemo < requiredAmountOfTimes then
-                        Err ("Could not parse at least " ++ toString requiredAmountOfTimes ++ " times")
+                        Err ("Parse failed at least " ++ toString requiredAmountOfTimes ++ " times")
                     else if minTimesMemo == 0 then
                         Ok initialState
                     else
-                        Ok (squash initialState nextState (\value -> StringToken value))
+                        Ok nextState
     in
     helperFunc 0 initialState
 
 
-oneOrMore : Parser -> Parser
+repeat : Parser a -> Parser a
+repeat parser =
+    Parser <|
+        \initialState ->
+            let
+                helper =
+                    \nextState prevState initialState ->
+                        case apply nextState parser of
+                            Ok newState ->
+                                {- zeroOrMore may return Ok if nothing was parsed -}
+                                if newState == prevState then
+                                    Ok newState
+                                else
+                                    helper newState nextState initialState
+
+                            Err reason ->
+                                {- if nothing else can be parsed -}
+                                if nextState == initialState then
+                                    Err reason
+                                else
+                                    Ok nextState
+            in
+            helper initialState initialState initialState
+
+
+maybeOne : Parser a -> Parser a
+maybeOne parser =
+    Parser <|
+        \initialState ->
+            case apply initialState parser of
+                (Ok nextState) as is ->
+                    is
+
+                Err _ ->
+                    Ok initialState
+
+
+oneOrMore : Parser a -> Parser a
 oneOrMore parser =
     Parser <|
         \((State { source, offset, tokens }) as initialState) ->
             runParserNTimes 1 parser initialState
 
 
-zeroOrMore : Parser -> Parser
+zeroOrMore : Parser a -> Parser a
 zeroOrMore parser =
     Parser <|
         \((State { source, offset, tokens }) as initialState) ->
             runParserNTimes 0 parser initialState
 
 
-identity : Parser
-identity =
-    Parser <| \s -> Ok s
-
-
-apply : Parser -> State -> Result String State
-apply (Parser parse) state =
-    parse state
-
-
-sequence : List Parser -> Parser
+sequence : List (Parser a) -> Parser a
 sequence parsers =
     Parser <|
         \initialState ->
@@ -152,12 +229,12 @@ sequence parsers =
                                     parseNext nextState restParsers
 
                                 Err _ ->
-                                    Err "could not parse sequence"
+                                    Err "sequence: parse failed"
             in
             parseNext initialState parsers
 
 
-oneOf : List Parser -> Parser
+oneOf : List (Parser a) -> Parser a
 oneOf parsers =
     Parser <|
         \initialState ->
@@ -165,7 +242,7 @@ oneOf parsers =
                 helper parsers =
                     case parsers of
                         [] ->
-                            Err "Could not parse non of the available parsers"
+                            Err "oneOf: parse failed"
 
                         (Parser parse) :: restParsers ->
                             case parse initialState of
@@ -176,149 +253,3 @@ oneOf parsers =
                                     result
             in
             helper parsers
-
-
-space : Parser
-space =
-    symbol ' '
-
-
-word : Parser
-word =
-    Parser <|
-        \((State { source, offset, tokens }) as state) ->
-            let
-                getNewOffset =
-                    \offset ->
-                        let
-                            alphabet =
-                                String.split "" "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-                            subString =
-                                String.slice offset (offset + 1) source
-                        in
-                        if List.member subString alphabet then
-                            getNewOffset (offset + 1)
-                        else
-                            offset
-
-                newOffset =
-                    getNewOffset offset
-            in
-            if newOffset > offset then
-                let
-                    value =
-                        String.slice offset newOffset source
-                in
-                Ok
-                    (State
-                        { source = source
-                        , offset = newOffset
-                        , tokens = Step { position = offset, value = value } (WordToken value) :: tokens
-                        }
-                    )
-            else
-                Err "Could not parse a word"
-
-
-sentence : Parser
-sentence =
-    Parser <|
-        \initialState ->
-            let
-                helper nextState prevState =
-                    let
-                        parser =
-                            oneOf
-                                [ word
-                                , oneOrMore space
-                                ]
-                    in
-                    case apply parser nextState of
-                        Ok newState ->
-                            {- zeroOrMore may return Ok if nothing was parsed -}
-                            if newState == prevState then
-                                Ok newState
-                            else
-                                helper newState nextState
-
-                        Err reason ->
-                            {- if nothing else can be parsed -}
-                            if nextState == initialState then
-                                Err reason
-                            else
-                                Ok nextState
-            in
-            helper initialState initialState
-
-
-keyword : String -> Parser
-keyword key =
-    Parser <|
-        \initialState ->
-            let
-                parser =
-                    sequence
-                        [ symbol '@'
-                        , sequence (List.map (\c -> symbol c) (String.toList key))
-                        ]
-
-                result =
-                    apply parser initialState
-            in
-            case result of
-                Ok newState ->
-                    Ok (squash initialState newState (\value -> KeywordToken value))
-
-                (Err _) as result ->
-                    result
-
-
-(|=) : Parser -> Parser -> Parser
-(|=) (Parser a) (Parser b) =
-    Parser <|
-        \state ->
-            let
-                _ =
-                    Debug.log "state" state
-            in
-            case a state of
-                Ok nextState ->
-                    b nextState
-
-                Err _ ->
-                    apply identity state
-
-
-run : String -> ()
-run source =
-    let
-        initialState =
-            State
-                { source = source
-                , offset = 0
-                , tokens = []
-                }
-
-        parser =
-            identity
-                |= sentence
-                |= keyword "name"
-
-        result =
-            apply parser initialState
-
-        _ =
-            Debug.log "result" (reverseTokens result)
-    in
-    ()
-
-
-reverseTokens : Result String State -> Result String State
-reverseTokens result =
-    case result of
-        Ok (State state) ->
-            Ok (State { state | tokens = List.reverse state.tokens })
-
-        Err x ->
-            Err x
