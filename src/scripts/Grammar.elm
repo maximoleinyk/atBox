@@ -1,21 +1,6 @@
 module Grammar exposing (run)
 
-import ParserUtils as P
-    exposing
-        ( Parser(..)
-        , State(..)
-        , Token(..)
-        , apply
-        , keyword
-        , maybeOne
-        , oneOf
-        , oneOrMore
-        , parseAndFlip
-        , repeat
-        , sequence
-        , squash
-        , zeroOrMore
-        )
+import Parser as P exposing (Parser(..), State(..), Token(..), apply, keyword, maybeOne, oneOf, oneOrMore, repeat, sequence, squash, swapBy, zeroOrMore)
 
 
 type Recurrence
@@ -31,21 +16,22 @@ type Context
     | UnknownKeyword
     | OrJoiner
     | AndJoiner
-    | NumberOperator
-    | StringOperator
     | UnknownOperator
-    | Sentence
     | Comma
     | IntegerValue
     | FloatValue
     | ListValue
     | StringValue
+    | EitherOrValue
+    | NeitherNorValue
     | Space
     | LeftParenthesis
     | RightParenthesis
     | Quote
     | AtSymbol
     | IsOperator
+    | IsInOperator
+    | IsNotInOperator
     | IsNotOperator
     | ContainsOperator
     | EqualsOperator
@@ -54,6 +40,10 @@ type Context
     | GreaterThanOperator
     | GreaterThanOrEqualsOperator
     | LessThanOrEqualsOperator
+    | EitherOperator
+    | NeitherOperator
+    | OrOperator
+    | NorOperator
 
 
 type alias State =
@@ -166,28 +156,6 @@ word =
                     )
             else
                 Err "Cannot parse a word"
-
-
-sentence : Parser
-sentence =
-    Parser <|
-        \initialState ->
-            let
-                result =
-                    apply initialState <|
-                        repeat
-                            (oneOf
-                                [ word
-                                , spaces AtLeastOne
-                                ]
-                            )
-            in
-            case result of
-                Ok newState ->
-                    Ok (squash initialState newState Sentence)
-
-                (Err x) as result ->
-                    result
 
 
 field : Char -> String -> Parser
@@ -313,7 +281,7 @@ commaSep parser =
 
                 result =
                     apply initialState <|
-                        parseAndFlip condition parserTrue parserFalse
+                        swapBy condition parserTrue parserFalse
             in
             result
 
@@ -335,7 +303,7 @@ list parser =
             in
             case result of
                 Ok newState ->
-                    Ok (squash initialState newState ListValue)
+                    Debug.log "list:" <| Ok (squash initialState newState ListValue)
 
                 (Err _) as result ->
                     result
@@ -393,26 +361,119 @@ float : Parser
 float =
     Parser <|
         \initialState ->
-            Ok initialState
+            let
+                digits =
+                    List.map (\d -> symbol d Char) (String.toList "1234567890")
+
+                result =
+                    apply initialState <|
+                        sequence
+                            [ maybeOne <|
+                                oneOf
+                                    [ symbol '+' Char
+                                    , symbol '-' Char
+                                    ]
+                            , repeat <| oneOf digits
+                            , symbol '.' Char
+                            , repeat <| oneOf digits
+                            ]
+            in
+            case result of
+                Ok newState ->
+                    Ok (squash initialState newState FloatValue)
+
+                (Err _) as result ->
+                    result
 
 
 numberValue : Parser
 numberValue =
     oneOf
-        [ int
-        , float
+        [ float
+        , int
         ]
+
+
+orOperator : Parser
+orOperator =
+    keyword "or" OrOperator
+
+
+norOperator : Parser
+norOperator =
+    keyword "nor" NorOperator
 
 
 value : Parser -> Parser
 value parser =
-    sequence
-        [ spaces AtLeastOne
-        , oneOf
-            [ parser
-            , list parser
-            ]
-        ]
+    Parser <|
+        \((State { tokens }) as initialState) ->
+            case List.head tokens of
+                Just (Token { state }) ->
+                    case state of
+                        EitherOperator ->
+                            let
+                                result =
+                                    apply initialState <|
+                                        sequence
+                                            [ spaces AtLeastOne
+                                            , parser
+                                            , spaces AtLeastOne
+                                            , orOperator
+                                            , spaces AtLeastOne
+                                            , parser
+                                            ]
+                            in
+                            case result of
+                                Ok newState ->
+                                    Ok (squash initialState newState EitherOrValue)
+
+                                (Err _) as result ->
+                                    result
+
+                        NeitherOperator ->
+                            let
+                                result =
+                                    apply initialState <|
+                                        sequence
+                                            [ spaces AtLeastOne
+                                            , parser
+                                            , spaces AtLeastOne
+                                            , norOperator
+                                            , spaces AtLeastOne
+                                            , parser
+                                            ]
+                            in
+                            case result of
+                                Ok newState ->
+                                    Ok (squash initialState newState NeitherNorValue)
+
+                                (Err _) as result ->
+                                    result
+
+                        IsInOperator ->
+                            apply initialState <|
+                                sequence
+                                    [ spaces AtLeastOne
+                                    , list parser
+                                    ]
+
+                        IsNotInOperator ->
+                            apply initialState <|
+                                sequence
+                                    [ spaces AtLeastOne
+                                    , list parser
+                                    ]
+
+                        _ ->
+                            apply initialState <|
+                                sequence
+                                    [ spaces AtLeastOne
+                                    , parser
+                                    ]
+
+                Nothing ->
+                    Ok initialState
 
 
 equals : Parser
@@ -533,15 +594,105 @@ lessThanOrEquals =
                     result
 
 
-operator : QueryField -> Parser
-operator queryField =
+isEitherOperator : Parser
+isEitherOperator =
+    Parser <|
+        \initialState ->
+            let
+                result =
+                    apply initialState <|
+                        sequence
+                            [ keyword "is" Word
+                            , spaces AtLeastOne
+                            , keyword "either" Word
+                            ]
+            in
+            case result of
+                Ok newState ->
+                    Ok (squash initialState newState EitherOperator)
+
+                (Err x) as result ->
+                    result
+
+
+isNeitherOperator : Parser
+isNeitherOperator =
+    Parser <|
+        \initialState ->
+            let
+                result =
+                    apply initialState <|
+                        sequence
+                            [ keyword "is" Word
+                            , spaces AtLeastOne
+                            , keyword "neither" Word
+                            ]
+            in
+            case result of
+                Ok newState ->
+                    Ok (squash initialState newState NeitherOperator)
+
+                (Err x) as result ->
+                    result
+
+
+isInOperator : Parser
+isInOperator =
+    Parser <|
+        \initialState ->
+            let
+                result =
+                    apply initialState <|
+                        sequence
+                            [ keyword "is" Word
+                            , spaces AtLeastOne
+                            , keyword "in" Word
+                            ]
+            in
+            case result of
+                Ok newState ->
+                    Ok (squash initialState newState IsInOperator)
+
+                (Err x) as result ->
+                    result
+
+
+isNotInOperator : Parser
+isNotInOperator =
+    Parser <|
+        \initialState ->
+            let
+                result =
+                    apply initialState <|
+                        sequence
+                            [ keyword "is" Word
+                            , spaces AtLeastOne
+                            , keyword "not" Word
+                            , spaces AtLeastOne
+                            , keyword "in" Word
+                            ]
+            in
+            case result of
+                Ok newState ->
+                    Ok (squash initialState newState IsNotInOperator)
+
+                (Err x) as result ->
+                    result
+
+
+operatorAndValue : QueryField -> Parser
+operatorAndValue queryField =
     case queryField.fieldType of
         "string" ->
             sequence
                 [ oneOf
-                    [ isOperator
+                    [ isNotInOperator
                     , isNotOperator
+                    , isEitherOperator
                     , containsOperator
+                    , isNeitherOperator
+                    , isInOperator
+                    , isOperator
                     ]
                 , value stringValue
                 ]
@@ -549,12 +700,16 @@ operator queryField =
         "number" ->
             sequence
                 [ oneOf
-                    [ equals
+                    [ isNotInOperator
                     , notEquals
-                    , greaterThan
+                    , equals
                     , greaterThanOrEquals
-                    , lessThan
                     , lessThanOrEquals
+                    , greaterThan
+                    , lessThan
+                    , isInOperator
+                    , isEitherOperator
+                    , isNeitherOperator
                     ]
                 , value numberValue
                 ]
@@ -563,8 +718,8 @@ operator queryField =
             repeat <| anythingExceptSymbol ' ' UnknownOperator
 
 
-operatorGroup : List QueryField -> Parser
-operatorGroup queryFields =
+keywordAndOperator : List QueryField -> Parser
+keywordAndOperator queryFields =
     Parser <|
         \initialState ->
             let
@@ -597,7 +752,7 @@ operatorGroup queryFields =
                                                 parser =
                                                     sequence
                                                         [ spaces AtLeastOne
-                                                        , operator queryField
+                                                        , operatorAndValue queryField
                                                         ]
                                             in
                                             apply (State nextState) parser
@@ -615,17 +770,17 @@ operatorGroup queryFields =
                     result
 
 
-criteria : Parser
-criteria =
+criteria : Bool -> Parser
+criteria flag =
     oneOf
         [ sequence
             [ leftParenthesis
             , spaces ZeroOrMore
-            , start
+            , start flag
             , spaces ZeroOrMore
             , rightParenthesis
             ]
-        , operatorGroup
+        , keywordAndOperator
             [ QueryField "name" "name" "string"
             , QueryField "age" "age" "number"
             , QueryField "status" "status" "enum"
@@ -633,19 +788,44 @@ criteria =
         ]
 
 
-start : Parser
-start =
+start : Bool -> Parser
+start flag =
     Parser <|
         \initialState ->
-            let
-                result =
-                    apply initialState <|
+            if flag then
+                Ok initialState
+            else
+                let
+                    condition =
+                        \tokenType ->
+                            List.member tokenType
+                                [ IntegerValue
+                                , FloatValue
+                                , ListValue
+                                , StringValue
+                                , Quote
+                                , RightParenthesis
+                                , EitherOrValue
+                                , NeitherNorValue
+                                ]
+
+                    parserTrue =
                         sequence
-                            [ maybeOne sentence
-                            , criteria
+                            [ spaces ZeroOrMore
+                            , conjunction
                             ]
-            in
-            result
+
+                    parserFalse =
+                        sequence
+                            [ maybeOne <| repeat <| oneOf [ word, spaces AtLeastOne ]
+                            , criteria False
+                            ]
+
+                    result =
+                        apply initialState <|
+                            swapBy condition parserTrue parserFalse
+                in
+                result
 
 
 run : String -> ()
@@ -660,7 +840,7 @@ run source =
 
         result =
             apply initialState <|
-                int
+                start False
 
         _ =
             Debug.log "result" (reverseTokens result)

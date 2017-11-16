@@ -1,4 +1,20 @@
-module ParserUtils exposing (..)
+module Parser
+    exposing
+        ( Parser(..)
+        , State(..)
+        , Token(..)
+        , apply
+        , keyword
+        , maybeOne
+        , oneOf
+        , oneOrMore
+        , repeat
+        , sequence
+        , squash
+        , swapBy
+        , symbol
+        , zeroOrMore
+        )
 
 import Char
 
@@ -80,13 +96,13 @@ keyword key context =
 
 
 squash : State a -> State a -> a -> State a
-squash (State initialState) (State newState) context =
+squash (State initialState) (State nextState) context =
     let
         diff =
-            List.length newState.tokens - List.length initialState.tokens
+            List.length nextState.tokens - List.length initialState.tokens
 
         diffTokens =
-            List.take diff newState.tokens
+            List.take diff nextState.tokens
 
         value =
             List.foldl (\a b -> a ++ b) "" (List.map (\(Token data) -> data.value) diffTokens)
@@ -104,47 +120,55 @@ squash (State initialState) (State newState) context =
         }
 
 
-parseAndFlip : (a -> Bool) -> Parser a -> Parser a -> Parser a
-parseAndFlip condition parserTrue parserFalse =
+swapByHelper : (a -> Bool) -> Parser a -> Parser a -> State a -> State a -> State a -> Result String (State a)
+swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) prevState initialState =
+    case List.head tokens of
+        Just (Token { state }) ->
+            if condition state then
+                case apply nextState parserTrue of
+                    Ok value ->
+                        if value == prevState then
+                            Ok value
+                        else
+                            swapByHelper condition parserTrue parserFalse value nextState initialState
+
+                    Err x ->
+                        if nextState == initialState then
+                            Err "flip: parse failed"
+                        else
+                            Ok nextState
+            else
+                case apply nextState parserFalse of
+                    Ok value ->
+                        if value == prevState then
+                            Ok value
+                        else
+                            swapByHelper condition parserTrue parserFalse value nextState initialState
+
+                    Err x ->
+                        Ok nextState
+
+        Nothing ->
+            case apply initialState parserFalse of
+                Ok value ->
+                    if value == initialState then
+                        Ok value
+                    else
+                        swapByHelper condition parserTrue parserFalse value initialState initialState
+
+                Err x ->
+                    Err "flip: parse failed"
+
+
+swapBy : (a -> Bool) -> Parser a -> Parser a -> Parser a
+swapBy condition parserTrue parserFalse =
     Parser <|
-        \initialState ->
-            let
-                helper =
-                    \((State { tokens }) as nextState) prevState initialState ->
-                        case List.head tokens of
-                            Just (Token { state }) ->
-                                if condition state then
-                                    case apply nextState parserTrue of
-                                        Ok value ->
-                                            if value == prevState then
-                                                Ok value
-                                            else
-                                                helper value nextState initialState
-
-                                        Err x ->
-                                            if nextState == initialState then
-                                                Err "flip: parse failed"
-                                            else
-                                                Ok nextState
-                                else
-                                    case apply nextState parserFalse of
-                                        Ok value ->
-                                            if value == prevState then
-                                                Ok value
-                                            else
-                                                helper value nextState initialState
-
-                                        Err x ->
-                                            Err "flip: parse failed"
-
-                            Nothing ->
-                                Err "flip: parse failed"
-            in
-            helper initialState initialState initialState
+        \state ->
+            swapByHelper condition parserTrue parserFalse state state state
 
 
 runParserNTimes : Int -> Parser a -> State a -> Result String (State a)
-runParserNTimes requiredAmountOfTimes (Parser parse) ((State { source, offset, tokens }) as initialState) =
+runParserNTimes requiredAmountOfTimes (Parser parse) initialState =
     let
         helperFunc minTimesMemo nextState =
             case parse nextState of
@@ -192,8 +216,8 @@ maybeOne parser =
     Parser <|
         \initialState ->
             case apply initialState parser of
-                (Ok nextState) as is ->
-                    is
+                (Ok nextState) as result ->
+                    result
 
                 Err _ ->
                     Ok initialState
@@ -202,14 +226,14 @@ maybeOne parser =
 oneOrMore : Parser a -> Parser a
 oneOrMore parser =
     Parser <|
-        \((State { source, offset, tokens }) as initialState) ->
+        \initialState ->
             runParserNTimes 1 parser initialState
 
 
 zeroOrMore : Parser a -> Parser a
 zeroOrMore parser =
     Parser <|
-        \((State { source, offset, tokens }) as initialState) ->
+        \initialState ->
             runParserNTimes 0 parser initialState
 
 
