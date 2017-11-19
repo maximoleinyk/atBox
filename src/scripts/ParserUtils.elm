@@ -1,10 +1,10 @@
-module Parser
+module ParserUtils
     exposing
         ( Parser(..)
+        , Problem(..)
         , State(..)
         , Token(..)
         , apply
-        , keyword
         , maybeOne
         , oneOf
         , oneOrMore
@@ -13,10 +13,9 @@ module Parser
         , squash
         , swapBy
         , symbol
+        , word
         , zeroOrMore
         )
-
-import Char
 
 
 type Token a
@@ -35,11 +34,19 @@ type State a
         }
 
 
+type Problem a
+    = Problem
+        { latestState : State a
+        , message : String
+        , expecting : List a
+        }
+
+
 type Parser a
-    = Parser (State a -> Result String (State a))
+    = Parser (State a -> Result (Problem a) (State a))
 
 
-apply : State a -> Parser a -> Result String (State a)
+apply : State a -> Parser a -> Result (Problem a) (State a)
 apply state (Parser parse) =
     parse state
 
@@ -60,7 +67,12 @@ symbol predicate context =
             in
             case char of
                 Nothing ->
-                    Err "Cannot parse symbol"
+                    Err <|
+                        Problem
+                            { latestState = initialState
+                            , message = "symbol: parse failed"
+                            , expecting = [ context ]
+                            }
 
                 Just char ->
                     if predicate char then
@@ -72,55 +84,101 @@ symbol predicate context =
                                 }
                             )
                     else
-                        Err <| "Could not parse symbol: " ++ toString char
+                        Err <|
+                            Problem
+                                { latestState = initialState
+                                , message = "symbol: parse failed"
+                                , expecting = [ context ]
+                                }
 
 
-keyword : String -> a -> Parser a
-keyword key context =
+word : a -> Parser a
+word context =
     Parser <|
-        \initialState ->
+        \((State { source, offset, tokens }) as initialState) ->
             let
-                mapper =
-                    \c -> symbol (\char -> Char.toLower char == c) context
+                getNewOffset =
+                    \offset ->
+                        let
+                            alphabet =
+                                String.split "" "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-                result =
-                    apply initialState <|
-                        sequence (List.map mapper (String.toList (String.toLower key)))
+                            subString =
+                                String.slice offset (offset + 1) source
+                        in
+                        if List.member subString alphabet then
+                            getNewOffset (offset + 1)
+                        else
+                            offset
+
+                newOffset =
+                    getNewOffset offset
             in
-            case result of
-                Ok newState ->
-                    Ok (squash initialState newState context)
-
-                (Err _) as result ->
-                    result
-
-
-squash : State a -> State a -> a -> State a
-squash (State initialState) (State nextState) context =
-    let
-        diff =
-            List.length nextState.tokens - List.length initialState.tokens
-
-        diffTokens =
-            List.take diff nextState.tokens
-
-        value =
-            List.foldl (\a b -> a ++ b) "" (List.map (\(Token data) -> data.value) diffTokens)
-
-        newOffset =
-            initialState.offset + String.length value
-
-        token =
-            Token { state = context, position = initialState.offset, value = value }
-    in
-    State
-        { source = initialState.source
-        , offset = newOffset
-        , tokens = token :: initialState.tokens
-        }
+            if newOffset > offset then
+                let
+                    token =
+                        Token
+                            { state = context
+                            , position = offset
+                            , value = String.slice offset newOffset source
+                            }
+                in
+                Ok
+                    (State
+                        { source = source
+                        , offset = newOffset
+                        , tokens = token :: tokens
+                        }
+                    )
+            else
+                Err <|
+                    Problem
+                        { message = "word: parse failed"
+                        , latestState = initialState
+                        , expecting = [ context ]
+                        }
 
 
-swapByHelper : (a -> Bool) -> Parser a -> Parser a -> State a -> State a -> State a -> Result String (State a)
+squash : a -> Parser a -> Parser a
+squash context parser =
+    Parser <|
+        \(State initialState) ->
+            case apply (State initialState) parser of
+                Ok (State nextState) ->
+                    let
+                        diff =
+                            List.length nextState.tokens - List.length initialState.tokens
+
+                        diffTokens =
+                            List.take diff nextState.tokens
+
+                        value =
+                            List.foldl (\a b -> a ++ b) "" (List.map (\(Token data) -> data.value) diffTokens)
+
+                        newOffset =
+                            initialState.offset + String.length value
+
+                        token =
+                            Token { state = context, position = initialState.offset, value = value }
+                    in
+                    Ok
+                        (State
+                            { source = initialState.source
+                            , offset = newOffset
+                            , tokens = token :: initialState.tokens
+                            }
+                        )
+
+                (Err (Problem { latestState })) as error ->
+                    Err <|
+                        Problem
+                            { message = "squash: parse failed"
+                            , latestState = latestState
+                            , expecting = [ context ]
+                            }
+
+
+swapByHelper : (a -> Bool) -> Parser a -> Parser a -> State a -> State a -> State a -> Result (Problem a) (State a)
 swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) prevState initialState =
     case List.head tokens of
         Just (Token { state }) ->
@@ -132,9 +190,9 @@ swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) 
                         else
                             swapByHelper condition parserTrue parserFalse value nextState initialState
 
-                    Err x ->
+                    (Err x) as error ->
                         if nextState == initialState then
-                            Err "flip: parse failed"
+                            error
                         else
                             Ok nextState
             else
@@ -145,8 +203,8 @@ swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) 
                         else
                             swapByHelper condition parserTrue parserFalse value nextState initialState
 
-                    Err x ->
-                        Ok nextState
+                    (Err x) as error ->
+                        error
 
         Nothing ->
             case apply initialState parserFalse of
@@ -156,8 +214,8 @@ swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) 
                     else
                         swapByHelper condition parserTrue parserFalse value initialState initialState
 
-                Err x ->
-                    Err "flip: parse failed"
+                (Err x) as error ->
+                    error
 
 
 swapBy : (a -> Bool) -> Parser a -> Parser a -> Parser a
@@ -165,25 +223,6 @@ swapBy condition parserTrue parserFalse =
     Parser <|
         \state ->
             swapByHelper condition parserTrue parserFalse state state state
-
-
-runParserNTimes : Int -> Parser a -> State a -> Result String (State a)
-runParserNTimes requiredAmountOfTimes (Parser parse) initialState =
-    let
-        helperFunc minTimesMemo nextState =
-            case parse nextState of
-                Ok state ->
-                    helperFunc (minTimesMemo + 1) state
-
-                Err _ ->
-                    if minTimesMemo < requiredAmountOfTimes then
-                        Err ("Parse failed at least " ++ toString requiredAmountOfTimes ++ " times")
-                    else if minTimesMemo == 0 then
-                        Ok initialState
-                    else
-                        Ok nextState
-    in
-    helperFunc 0 initialState
 
 
 repeat : Parser a -> Parser a
@@ -201,26 +240,33 @@ repeat parser =
                                 else
                                     helper newState nextState initialState
 
-                            Err reason ->
+                            (Err x) as error ->
                                 {- if nothing else can be parsed -}
                                 if nextState == initialState then
-                                    Err reason
+                                    error
                                 else
                                     Ok nextState
             in
             helper initialState initialState initialState
 
 
-maybeOne : Parser a -> Parser a
-maybeOne parser =
-    Parser <|
-        \initialState ->
-            case apply initialState parser of
-                (Ok nextState) as result ->
-                    result
+runParserNTimes : Int -> Parser a -> State a -> Result (Problem a) (State a)
+runParserNTimes requiredAmountOfTimes (Parser parse) initialState =
+    let
+        helperFunc minTimesMemo nextState =
+            case parse nextState of
+                Ok state ->
+                    helperFunc (minTimesMemo + 1) state
 
-                Err _ ->
-                    Ok initialState
+                (Err x) as error ->
+                    if minTimesMemo < requiredAmountOfTimes then
+                        error
+                    else if minTimesMemo == 0 then
+                        Ok initialState
+                    else
+                        Ok nextState
+    in
+    helperFunc 0 initialState
 
 
 oneOrMore : Parser a -> Parser a
@@ -237,12 +283,24 @@ zeroOrMore parser =
             runParserNTimes 0 parser initialState
 
 
+maybeOne : Parser a -> Parser a
+maybeOne parser =
+    Parser <|
+        \initialState ->
+            case apply initialState parser of
+                (Ok nextState) as result ->
+                    result
+
+                Err _ ->
+                    Ok initialState
+
+
 sequence : List (Parser a) -> Parser a
 sequence parsers =
     Parser <|
         \initialState ->
             let
-                parseNext latestState parsers =
+                helper latestState parsers =
                     case parsers of
                         [] ->
                             Ok latestState
@@ -250,12 +308,12 @@ sequence parsers =
                         (Parser nextParser) :: restParsers ->
                             case nextParser latestState of
                                 Ok nextState ->
-                                    parseNext nextState restParsers
+                                    helper nextState restParsers
 
-                                Err _ ->
-                                    Err "sequence: parse failed"
+                                (Err _) as result ->
+                                    result
             in
-            parseNext initialState parsers
+            helper initialState parsers
 
 
 oneOf : List (Parser a) -> Parser a
@@ -263,17 +321,22 @@ oneOf parsers =
     Parser <|
         \initialState ->
             let
-                helper parsers =
+                helper parsers result =
                     case parsers of
                         [] ->
-                            Err "oneOf: parse failed"
+                            Err <|
+                                Problem
+                                    { message = "oneOf: parse failed - no more parsers"
+                                    , latestState = initialState
+                                    , expecting = result
+                                    }
 
-                        (Parser parse) :: restParsers ->
-                            case parse initialState of
-                                Err _ ->
-                                    helper restParsers
+                        parser :: restParsers ->
+                            case apply initialState parser of
+                                Err (Problem x) ->
+                                    helper restParsers <| List.append result x.expecting
 
                                 (Ok nextState) as result ->
                                     result
             in
-            helper parsers
+            helper parsers []
