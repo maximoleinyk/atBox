@@ -9,9 +9,9 @@ module ParserUtils
         , oneOf
         , oneOrMore
         , repeat
+        , semaphore
         , sequence
         , squash
-        , swapBy
         , symbol
         , word
         , zeroOrMore
@@ -39,6 +39,7 @@ type Problem a
         { latestState : State a
         , message : String
         , expecting : List a
+        , offset : Int
         }
 
 
@@ -72,6 +73,7 @@ symbol predicate context =
                             { latestState = initialState
                             , message = "symbol: parse failed"
                             , expecting = [ context ]
+                            , offset = offset
                             }
 
                 Just char ->
@@ -89,6 +91,7 @@ symbol predicate context =
                                 { latestState = initialState
                                 , message = "symbol: parse failed"
                                 , expecting = [ context ]
+                                , offset = offset
                                 }
 
 
@@ -136,6 +139,7 @@ word context =
                         { message = "word: parse failed"
                         , latestState = initialState
                         , expecting = [ context ]
+                        , offset = offset
                         }
 
 
@@ -175,11 +179,12 @@ squash context parser =
                             { message = "squash: parse failed"
                             , latestState = latestState
                             , expecting = [ context ]
+                            , offset = initialState.offset
                             }
 
 
-swapByHelper : (a -> Bool) -> Parser a -> Parser a -> State a -> State a -> State a -> Result (Problem a) (State a)
-swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) prevState initialState =
+semaphoreHelper : (a -> Bool) -> Parser a -> Parser a -> State a -> State a -> State a -> Result (Problem a) (State a)
+semaphoreHelper condition parserTrue parserFalse ((State { tokens }) as nextState) prevState initialState =
     case List.head tokens of
         Just (Token { state }) ->
             if condition state then
@@ -188,7 +193,7 @@ swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) 
                         if value == prevState then
                             Ok value
                         else
-                            swapByHelper condition parserTrue parserFalse value nextState initialState
+                            semaphoreHelper condition parserTrue parserFalse value nextState initialState
 
                     (Err x) as error ->
                         if nextState == initialState then
@@ -201,7 +206,7 @@ swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) 
                         if value == prevState then
                             Ok value
                         else
-                            swapByHelper condition parserTrue parserFalse value nextState initialState
+                            semaphoreHelper condition parserTrue parserFalse value nextState initialState
 
                     (Err x) as error ->
                         error
@@ -212,17 +217,17 @@ swapByHelper condition parserTrue parserFalse ((State { tokens }) as nextState) 
                     if value == initialState then
                         Ok value
                     else
-                        swapByHelper condition parserTrue parserFalse value initialState initialState
+                        semaphoreHelper condition parserTrue parserFalse value initialState initialState
 
                 (Err x) as error ->
                     error
 
 
-swapBy : (a -> Bool) -> Parser a -> Parser a -> Parser a
-swapBy condition parserTrue parserFalse =
+semaphore : (a -> Bool) -> Parser a -> Parser a -> Parser a
+semaphore condition parserTrue parserFalse =
     Parser <|
-        \state ->
-            swapByHelper condition parserTrue parserFalse state state state
+        \initialState ->
+            semaphoreHelper condition parserTrue parserFalse initialState initialState initialState
 
 
 repeat : Parser a -> Parser a
@@ -319,7 +324,7 @@ sequence parsers =
 oneOf : List (Parser a) -> Parser a
 oneOf parsers =
     Parser <|
-        \initialState ->
+        \((State { offset }) as initialState) ->
             let
                 helper parsers result =
                     case parsers of
@@ -329,14 +334,18 @@ oneOf parsers =
                                     { message = "oneOf: parse failed - no more parsers"
                                     , latestState = initialState
                                     , expecting = result
+                                    , offset = offset
                                     }
 
                         parser :: restParsers ->
                             case apply initialState parser of
-                                Err (Problem x) ->
-                                    helper restParsers <| List.append result x.expecting
-
                                 (Ok nextState) as result ->
                                     result
+
+                                (Err (Problem x)) as error ->
+                                    if offset == x.offset then
+                                        helper restParsers <| List.append result x.expecting
+                                    else
+                                        error
             in
             helper parsers []

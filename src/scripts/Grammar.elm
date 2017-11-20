@@ -1,7 +1,7 @@
 module Grammar exposing (run)
 
 import Char
-import Parser as P exposing (Parser(..), Problem(..), State(..), Token(..), apply, maybeOne, oneOf, oneOrMore, repeat, sequence, squash, swapBy, word, zeroOrMore)
+import ParserUtils as P exposing (Parser(..), Problem(..), State(..), Token(..), apply, maybeOne, oneOf, oneOrMore, repeat, semaphore, sequence, squash, word, zeroOrMore)
 
 
 type Recurrence
@@ -12,19 +12,14 @@ type Recurrence
 type TokenType
     = Char
     | Word
-    | QuotedWord
     | Keyword
-    | UnknownKeyword
     | OrJoiner
     | AndJoiner
     | UnknownOperator
     | Comma
     | IntegerValue
     | FloatValue
-    | ListValue
     | StringValue
-    | EitherOrValue
-    | NeitherNorValue
     | Space
     | LeftParenthesis
     | RightParenthesis
@@ -125,32 +120,11 @@ spaces recurrence =
                 oneOrMore (symbol ' ' Space)
 
 
-field : Char -> String -> Parser
-field char key =
-    squash Keyword <|
-        sequence
-            [ symbol char AtSymbol
-            , keyword key Word
-            ]
-
-
-unknownKeyword : Char -> Parser
-unknownKeyword char =
-    squash UnknownKeyword <|
-        sequence
-            [ symbol char AtSymbol
-            , word Word
-            ]
-
-
 conjunction : Parser
 conjunction =
-    sequence
-        [ spaces ZeroOrMore
-        , oneOf
-            [ keyword "or" OrJoiner
-            , keyword "and" AndJoiner
-            ]
+    oneOf
+        [ keyword "or" OrJoiner
+        , keyword "and" AndJoiner
         ]
 
 
@@ -174,62 +148,16 @@ isNotOperator =
             ]
 
 
-quotedWord : Parser
-quotedWord =
-    squash QuotedWord <|
-        sequence
-            [ doubleQuote
-            , repeat <| anythingExceptSymbol '"' QuotedWord
-            , doubleQuote
-            ]
-
-
-commaSep : Parser -> Parser
-commaSep parser =
-    Parser <|
-        \initialState ->
-            let
-                condition =
-                    \tokenType ->
-                        List.member tokenType [ StringValue, IntegerValue, FloatValue ]
-
-                parserTrue =
-                    sequence
-                        [ spaces ZeroOrMore
-                        , comma
-                        ]
-
-                parserFalse =
-                    sequence
-                        [ spaces ZeroOrMore
-                        , parser
-                        ]
-
-                result =
-                    apply initialState <|
-                        swapBy condition parserTrue parserFalse
-            in
-            result
-
-
-list : Parser -> Parser
-list parser =
-    squash ListValue <|
-        sequence
-            [ leftParenthesis
-            , spaces ZeroOrMore
-            , commaSep parser
-            , spaces ZeroOrMore
-            , rightParenthesis
-            ]
-
-
 stringValue : Parser
 stringValue =
     squash StringValue <|
         oneOf
             [ word Word
-            , quotedWord
+            , sequence
+                [ doubleQuote
+                , repeat <| anythingExceptSymbol '"' Word
+                , doubleQuote
+                ]
             ]
 
 
@@ -381,6 +309,11 @@ isInOperator =
             ]
 
 
+unknownOperator : Parser
+unknownOperator =
+    repeat <| anythingExceptSymbol ' ' UnknownOperator
+
+
 isNotInOperator : Parser
 isNotInOperator =
     squash IsNotInOperator <|
@@ -391,6 +324,45 @@ isNotInOperator =
             , spaces AtLeastOne
             , keyword "in" Word
             ]
+
+
+commaSep : Parser -> Parser
+commaSep parser =
+    Parser <|
+        \initialState ->
+            let
+                condition =
+                    \tokenType ->
+                        List.member tokenType [ StringValue, IntegerValue, FloatValue ]
+
+                parserTrue =
+                    sequence
+                        [ spaces ZeroOrMore
+                        , comma
+                        ]
+
+                parserFalse =
+                    sequence
+                        [ spaces ZeroOrMore
+                        , parser
+                        ]
+
+                result =
+                    apply initialState <|
+                        semaphore condition parserTrue parserFalse
+            in
+            result
+
+
+list : Parser -> Parser
+list parser =
+    sequence
+        [ leftParenthesis
+        , spaces ZeroOrMore
+        , commaSep parser
+        , spaces ZeroOrMore
+        , rightParenthesis
+        ]
 
 
 value : Parser -> Parser
@@ -404,24 +376,22 @@ value parser =
                             [ spaces AtLeastOne
                             , case state of
                                 EitherOperator ->
-                                    squash EitherOrValue <|
-                                        sequence
-                                            [ parser
-                                            , spaces AtLeastOne
-                                            , orOperator
-                                            , spaces AtLeastOne
-                                            , parser
-                                            ]
+                                    sequence
+                                        [ parser
+                                        , spaces AtLeastOne
+                                        , orOperator
+                                        , spaces AtLeastOne
+                                        , parser
+                                        ]
 
                                 NeitherOperator ->
-                                    squash NeitherNorValue <|
-                                        sequence
-                                            [ parser
-                                            , spaces AtLeastOne
-                                            , norOperator
-                                            , spaces AtLeastOne
-                                            , parser
-                                            ]
+                                    sequence
+                                        [ parser
+                                        , spaces AtLeastOne
+                                        , norOperator
+                                        , spaces AtLeastOne
+                                        , parser
+                                        ]
 
                                 IsInOperator ->
                                     list parser
@@ -437,64 +407,58 @@ value parser =
                     Ok initialState
 
 
-operatorAndValue : Maybe QueryField -> Parser
-operatorAndValue queryField =
-    case queryField of
-        Just queryField ->
-            case queryField.fieldType of
-                "string" ->
-                    sequence
-                        [ oneOf
-                            [ isNotInOperator
-                            , isNotOperator
-                            , isEitherOperator
-                            , containsOperator
-                            , isNeitherOperator
-                            , isInOperator
-                            , isOperator
-                            ]
-                        , value stringValue
-                        ]
-
-                "number" ->
-                    sequence
-                        [ oneOf
-                            [ isNotInOperator
-                            , notEquals
-                            , equals
-                            , greaterThanOrEquals
-                            , lessThanOrEquals
-                            , greaterThan
-                            , lessThan
-                            , isInOperator
-                            , isEitherOperator
-                            , isNeitherOperator
-                            ]
-                        , value numberValue
-                        ]
-
-                _ ->
-                    repeat <| anythingExceptSymbol ' ' UnknownOperator
-
-        Nothing ->
-            repeat <| anythingExceptSymbol ' ' UnknownOperator
-
-
-keywordAndOperator : List QueryField -> Parser
-keywordAndOperator queryFields =
+keywordOperatorValue : List QueryField -> Parser
+keywordOperatorValue queryFields =
     let
-        at =
-            '@'
+        operator =
+            \queryField ->
+                case queryField.fieldType of
+                    "string" ->
+                        sequence
+                            [ oneOf
+                                [ isNotInOperator
+                                , isNotOperator
+                                , isEitherOperator
+                                , containsOperator
+                                , isNeitherOperator
+                                , isInOperator
+                                , isOperator
+                                ]
+                            , value stringValue
+                            ]
+
+                    "number" ->
+                        sequence
+                            [ oneOf
+                                [ isNotInOperator
+                                , notEquals
+                                , equals
+                                , greaterThanOrEquals
+                                , lessThanOrEquals
+                                , greaterThan
+                                , lessThan
+                                , isInOperator
+                                , isEitherOperator
+                                , isNeitherOperator
+                                ]
+                            , value numberValue
+                            ]
+
+                    _ ->
+                        unknownOperator
 
         mapper =
             \queryField ->
                 sequence
-                    [ field at queryField.label
+                    [ keyword queryField.label Keyword
                     , spaces AtLeastOne
-                    , operatorAndValue (Just queryField)
+                    , operator queryField
                     ]
     in
-    oneOf <| List.map mapper queryFields
+    sequence
+        [ symbol '@' AtSymbol
+        , oneOf <| List.map mapper queryFields
+        ]
 
 
 criteria : Bool -> Parser
@@ -507,7 +471,7 @@ criteria flag =
             , spaces ZeroOrMore
             , rightParenthesis
             ]
-        , keywordAndOperator
+        , keywordOperatorValue
             [ QueryField "name" "name" "string"
             , QueryField "age" "age" "number"
             , QueryField "status" "status" "enum"
@@ -529,14 +493,14 @@ start flag =
                                 [ StringValue
                                 , IntegerValue
                                 , FloatValue
-                                , ListValue
-                                , EitherOrValue
-                                , NeitherNorValue
                                 , RightParenthesis
                                 ]
 
                     parserTrue =
-                        conjunction
+                        sequence
+                            [ spaces AtLeastOne
+                            , conjunction
+                            ]
 
                     parserFalse =
                         sequence
@@ -551,7 +515,7 @@ start flag =
 
                     result =
                         apply initialState <|
-                            swapBy condition parserTrue parserFalse
+                            semaphore condition parserTrue parserFalse
                 in
                 result
 
@@ -572,9 +536,6 @@ run source =
 
         _ =
             print result
-
-        a =
-            Debug.log ">>> " result
     in
     ()
 
@@ -586,7 +547,7 @@ print result =
             \items result ->
                 case items of
                     [] ->
-                        "Empty list"
+                        ""
 
                     next :: rest ->
                         Debug.log (result ++ " >>> " ++ toString next) (helper rest result)
@@ -595,5 +556,5 @@ print result =
         Ok (State { tokens }) ->
             helper tokens "Ok"
 
-        (Err _) as error ->
-            ""
+        (Err (Problem { expecting })) as error ->
+            Debug.log "error" (toString expecting)
