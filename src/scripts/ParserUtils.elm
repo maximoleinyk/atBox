@@ -5,11 +5,11 @@ module ParserUtils
         , State(..)
         , Token(..)
         , apply
+        , identity
         , maybeOne
         , oneOf
         , oneOrMore
         , repeat
-        , semaphore
         , sequence
         , squash
         , symbol
@@ -37,7 +37,6 @@ type State a
 type Problem a
     = Problem
         { latestState : State a
-        , message : String
         , expecting : List a
         , offset : Int
         }
@@ -71,7 +70,6 @@ symbol predicate context =
                     Err <|
                         Problem
                             { latestState = initialState
-                            , message = "symbol: parse failed"
                             , expecting = [ context ]
                             , offset = offset
                             }
@@ -89,7 +87,6 @@ symbol predicate context =
                         Err <|
                             Problem
                                 { latestState = initialState
-                                , message = "symbol: parse failed"
                                 , expecting = [ context ]
                                 , offset = offset
                                 }
@@ -136,8 +133,7 @@ word context =
             else
                 Err <|
                     Problem
-                        { message = "word: parse failed"
-                        , latestState = initialState
+                        { latestState = initialState
                         , expecting = [ context ]
                         , offset = offset
                         }
@@ -176,58 +172,10 @@ squash context parser =
                 (Err (Problem { latestState })) as error ->
                     Err <|
                         Problem
-                            { message = "squash: parse failed"
-                            , latestState = latestState
+                            { latestState = latestState
                             , expecting = [ context ]
                             , offset = initialState.offset
                             }
-
-
-semaphoreHelper : (a -> Bool) -> Parser a -> Parser a -> State a -> State a -> State a -> Result (Problem a) (State a)
-semaphoreHelper condition parserTrue parserFalse ((State { tokens }) as nextState) prevState initialState =
-    case List.head tokens of
-        Just (Token { state }) ->
-            if condition state then
-                case apply nextState parserTrue of
-                    Ok value ->
-                        if value == prevState then
-                            Ok value
-                        else
-                            semaphoreHelper condition parserTrue parserFalse value nextState initialState
-
-                    (Err x) as error ->
-                        if nextState == initialState then
-                            error
-                        else
-                            Ok nextState
-            else
-                case apply nextState parserFalse of
-                    Ok value ->
-                        if value == prevState then
-                            Ok value
-                        else
-                            semaphoreHelper condition parserTrue parserFalse value nextState initialState
-
-                    (Err x) as error ->
-                        error
-
-        Nothing ->
-            case apply initialState parserFalse of
-                Ok value ->
-                    if value == initialState then
-                        Ok value
-                    else
-                        semaphoreHelper condition parserTrue parserFalse value initialState initialState
-
-                (Err x) as error ->
-                    error
-
-
-semaphore : (a -> Bool) -> Parser a -> Parser a -> Parser a
-semaphore condition parserTrue parserFalse =
-    Parser <|
-        \initialState ->
-            semaphoreHelper condition parserTrue parserFalse initialState initialState initialState
 
 
 repeat : Parser a -> Parser a
@@ -255,37 +203,35 @@ repeat parser =
             helper initialState initialState initialState
 
 
-runParserNTimes : Int -> Parser a -> State a -> Result (Problem a) (State a)
-runParserNTimes requiredAmountOfTimes (Parser parse) initialState =
-    let
-        helperFunc minTimesMemo nextState =
-            case parse nextState of
-                Ok state ->
-                    helperFunc (minTimesMemo + 1) state
-
-                (Err x) as error ->
-                    if minTimesMemo < requiredAmountOfTimes then
-                        error
-                    else if minTimesMemo == 0 then
-                        Ok initialState
-                    else
-                        Ok nextState
-    in
-    helperFunc 0 initialState
-
-
 oneOrMore : Parser a -> Parser a
-oneOrMore parser =
+oneOrMore (Parser parser) =
     Parser <|
         \initialState ->
-            runParserNTimes 1 parser initialState
+            let
+                helperFunc minTimesMemo nextState =
+                    case parser nextState of
+                        Ok state ->
+                            helperFunc (minTimesMemo + 1) state
+
+                        (Err x) as error ->
+                            if minTimesMemo < 1 then
+                                error
+                            else if minTimesMemo == 0 then
+                                Ok initialState
+                            else
+                                Ok nextState
+            in
+            helperFunc 0 initialState
 
 
 zeroOrMore : Parser a -> Parser a
 zeroOrMore parser =
-    Parser <|
-        \initialState ->
-            runParserNTimes 0 parser initialState
+    maybeOne <| oneOrMore parser
+
+
+identity : Parser a
+identity =
+    Parser <| \state -> Ok state
 
 
 maybeOne : Parser a -> Parser a
@@ -331,8 +277,7 @@ oneOf parsers =
                         [] ->
                             Err <|
                                 Problem
-                                    { message = "oneOf: parse failed - no more parsers"
-                                    , latestState = initialState
+                                    { latestState = initialState
                                     , expecting = result
                                     , offset = offset
                                     }

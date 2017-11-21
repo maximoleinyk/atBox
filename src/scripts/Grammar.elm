@@ -1,7 +1,7 @@
 module Grammar exposing (run)
 
 import Char
-import ParserUtils as P exposing (Parser(..), Problem(..), State(..), Token(..), apply, maybeOne, oneOf, oneOrMore, repeat, semaphore, sequence, squash, word, zeroOrMore)
+import ParserUtils as P exposing (Parser(..), Problem(..), State(..), Token(..), apply, identity, maybeOne, oneOf, oneOrMore, repeat, sequence, squash, word, zeroOrMore)
 
 
 type Recurrence
@@ -40,10 +40,6 @@ type TokenType
     | NeitherOperator
     | OrOperator
     | NorOperator
-
-
-type alias Expecting =
-    List TokenType
 
 
 type alias State =
@@ -326,42 +322,42 @@ isNotInOperator =
             ]
 
 
-commaSep : Parser -> Parser
-commaSep parser =
-    Parser <|
-        \initialState ->
-            let
-                condition =
-                    \tokenType ->
-                        List.member tokenType [ StringValue, IntegerValue, FloatValue ]
-
-                parserTrue =
-                    sequence
-                        [ spaces ZeroOrMore
-                        , comma
-                        ]
-
-                parserFalse =
-                    sequence
-                        [ spaces ZeroOrMore
-                        , parser
-                        ]
-
-                result =
-                    apply initialState <|
-                        semaphore condition parserTrue parserFalse
-            in
-            result
-
-
 list : Parser -> Parser
 list parser =
+    let
+        listHelper parser =
+            Parser <|
+                \initialState ->
+                    let
+                        p =
+                            sequence
+                                [ spaces ZeroOrMore
+                                , parser
+                                ]
+                    in
+                    case apply initialState p of
+                        Ok nextState ->
+                            apply nextState <|
+                                sequence
+                                    [ spaces ZeroOrMore
+                                    , oneOf
+                                        [ rightParenthesis
+                                        , sequence
+                                            [ comma
+                                            , listHelper parser
+                                            ]
+                                        ]
+                                    ]
+
+                        (Err x) as error ->
+                            error
+    in
     sequence
         [ leftParenthesis
-        , spaces ZeroOrMore
-        , commaSep parser
-        , spaces ZeroOrMore
-        , rightParenthesis
+        , oneOf
+            [ listHelper parser
+            , rightParenthesis
+            ]
         ]
 
 
@@ -407,8 +403,8 @@ value parser =
                     Ok initialState
 
 
-keywordOperatorValue : List QueryField -> Parser
-keywordOperatorValue queryFields =
+expression : List QueryField -> Parser
+expression queryFields =
     let
         operator =
             \queryField ->
@@ -461,63 +457,65 @@ keywordOperatorValue queryFields =
         ]
 
 
-criteria : Bool -> Parser
-criteria flag =
-    oneOf
-        [ sequence
-            [ leftParenthesis
-            , spaces ZeroOrMore
-            , start flag
-            , spaces ZeroOrMore
-            , rightParenthesis
-            ]
-        , keywordOperatorValue
-            [ QueryField "name" "name" "string"
-            , QueryField "age" "age" "number"
-            , QueryField "status" "status" "enum"
-            ]
-        ]
-
-
 start : Bool -> Parser
-start flag =
-    Parser <|
-        \initialState ->
-            if flag then
-                Ok initialState
-            else
-                let
-                    condition =
-                        \tokenType ->
-                            List.member tokenType
-                                [ StringValue
-                                , IntegerValue
-                                , FloatValue
-                                , RightParenthesis
-                                ]
+start beginning =
+    let
+        expression1 =
+            expression
+                [ QueryField "name" "name" "string"
+                , QueryField "age" "age" "number"
+                , QueryField "status" "status" "enum"
+                ]
 
-                    parserTrue =
+        expression2 =
+            Parser <|
+                \initialState ->
+                    apply initialState <|
                         sequence
-                            [ spaces AtLeastOne
-                            , conjunction
+                            [ leftParenthesis
+                            , start False
+                            , rightParenthesis
+                            , maybeOne <|
+                                sequence
+                                    [ spaces AtLeastOne
+                                    , conjunction
+                                    , spaces AtLeastOne
+                                    , start True
+                                    ]
                             ]
 
-                    parserFalse =
-                        sequence
-                            [ maybeOne <|
-                                repeat <|
-                                    oneOf
-                                        [ word Word
+        startHelper parser =
+            Parser <|
+                \initialState ->
+                    case apply initialState parser of
+                        Ok nextState ->
+                            apply nextState <|
+                                oneOf
+                                    [ sequence
+                                        [ spaces AtLeastOne
+                                        , conjunction
                                         , spaces AtLeastOne
+                                        , start True
                                         ]
-                            , criteria False
-                            ]
+                                    , spaces ZeroOrMore
+                                    ]
 
-                    result =
-                        apply initialState <|
-                            semaphore condition parserTrue parserFalse
-                in
-                result
+                        (Err x) as error ->
+                            error
+    in
+    startHelper <|
+        sequence
+            [ maybeOne <|
+                repeat <|
+                    oneOf
+                        [ word Word
+                        , spaces AtLeastOne
+                        ]
+            , oneOf
+                [ expression1
+                , expression2
+                ]
+            ]
 
 
 run : String -> ()
@@ -531,8 +529,7 @@ run source =
                 }
 
         result =
-            apply initialState <|
-                start False
+            apply initialState <| start True
 
         _ =
             print result
