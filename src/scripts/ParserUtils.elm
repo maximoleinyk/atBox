@@ -5,6 +5,7 @@ module ParserUtils
         , State(..)
         , Token(..)
         , apply
+        , end
         , identity
         , maybeOne
         , oneOf
@@ -49,6 +50,21 @@ type Parser a
 apply : State a -> Parser a -> Result (Problem a) (State a)
 apply state (Parser parse) =
     parse state
+
+
+end : Parser a
+end =
+    Parser <|
+        \((State { source, offset }) as initialState) ->
+            if String.length source /= offset then
+                Err <|
+                    Problem
+                        { latestState = initialState
+                        , expecting = []
+                        , offset = offset
+                        }
+            else
+                Ok initialState
 
 
 symbol : (Char -> Bool) -> a -> Parser a

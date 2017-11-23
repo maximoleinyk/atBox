@@ -1,12 +1,30 @@
 module Grammar exposing (run)
 
 import Char
-import ParserUtils as P exposing (Parser(..), Problem(..), State(..), Token(..), apply, identity, maybeOne, oneOf, oneOrMore, repeat, sequence, squash, word, zeroOrMore)
+import ParserUtils as P
+    exposing
+        ( Parser(..)
+        , Problem(..)
+        , State(..)
+        , Token(..)
+        , apply
+        , end
+        , identity
+        , maybeOne
+        , oneOf
+        , oneOrMore
+        , repeat
+        , sequence
+        , squash
+        , word
+        , zeroOrMore
+        )
 
 
 type Recurrence
     = ZeroOrMore
     | AtLeastOne
+    | ExactlyOnce
 
 
 type TokenType
@@ -40,6 +58,8 @@ type TokenType
     | NeitherOperator
     | OrOperator
     | NorOperator
+    | OpenBracket
+    | CloseBracket
 
 
 type alias State =
@@ -100,6 +120,16 @@ rightParenthesis =
     symbol ')' RightParenthesis
 
 
+openBracket : Parser
+openBracket =
+    symbol '[' OpenBracket
+
+
+closeBracket : Parser
+closeBracket =
+    symbol ']' CloseBracket
+
+
 doubleQuote : Parser
 doubleQuote =
     symbol '"' Quote
@@ -114,6 +144,9 @@ spaces recurrence =
 
             AtLeastOne ->
                 oneOrMore (symbol ' ' Space)
+
+            ExactlyOnce ->
+                symbol ' ' Space
 
 
 conjunction : Parser
@@ -146,15 +179,14 @@ isNotOperator =
 
 stringValue : Parser
 stringValue =
-    squash StringValue <|
-        oneOf
-            [ word Word
-            , sequence
-                [ doubleQuote
-                , repeat <| anythingExceptSymbol '"' Word
-                , doubleQuote
-                ]
+    oneOf
+        [ word StringValue
+        , sequence
+            [ doubleQuote
+            , squash StringValue <| repeat <| anythingExceptSymbol '"' Char
+            , doubleQuote
             ]
+        ]
 
 
 int : Parser
@@ -170,16 +202,15 @@ int =
                     [ symbol '+' Char
                     , symbol '-' Char
                     ]
-            , repeat <| oneOf <| List.map mapper (String.toList "123456789")
-            , maybeOne <| repeat <| oneOf <| List.map mapper (String.toList "1234567890")
+            , repeat <| oneOf <| List.map mapper (String.toList "1234567890")
             ]
 
 
 float : Parser
 float =
     let
-        digits =
-            List.map (\d -> symbol d Char) (String.toList "1234567890")
+        mapper =
+            \d -> symbol d Char
     in
     squash FloatValue <|
         sequence
@@ -188,9 +219,12 @@ float =
                     [ symbol '+' Char
                     , symbol '-' Char
                     ]
-            , repeat <| oneOf digits
+            , oneOf
+                [ symbol '0' Char
+                , repeat <| oneOf <| List.map mapper <| String.toList "123456789"
+                ]
             , symbol '.' Char
-            , repeat <| oneOf digits
+            , repeat <| oneOf <| List.map mapper <| String.toList "1234567890"
             ]
 
 
@@ -341,7 +375,7 @@ list parser =
                                 sequence
                                     [ spaces ZeroOrMore
                                     , oneOf
-                                        [ rightParenthesis
+                                        [ closeBracket
                                         , sequence
                                             [ comma
                                             , listHelper parser
@@ -353,10 +387,10 @@ list parser =
                             error
     in
     sequence
-        [ leftParenthesis
+        [ openBracket
         , oneOf
             [ listHelper parser
-            , rightParenthesis
+            , closeBracket
             ]
         ]
 
@@ -457,63 +491,118 @@ expression queryFields =
         ]
 
 
-start : Bool -> Parser
-start beginning =
+getNextParser : Int -> List (Token TokenType) -> Parser -> Parser
+getNextParser level items initialParser =
+    case items of
+        [] ->
+            Debug.crash "impossible"
+
+        (Token next) :: rest ->
+            case next.state of
+                LeftParenthesis ->
+                    sequence
+                        [ spaces ZeroOrMore
+                        , startHelper (level + 1) initialParser <|
+                            sequence
+                                [ spaces ZeroOrMore
+                                , oneOf
+                                    [ initialParser
+                                    , leftParenthesis
+                                    ]
+                                ]
+                        ]
+
+                RightParenthesis ->
+                    let
+                        newLevel =
+                            level - 1
+                    in
+                    oneOf
+                        [ sequence
+                            [ spaces AtLeastOne
+                            , startHelper newLevel initialParser conjunction
+                            ]
+                        , if newLevel > 0 then
+                            startHelper newLevel initialParser rightParenthesis
+                          else
+                            spaces ZeroOrMore
+                        ]
+
+                OrJoiner ->
+                    startHelper level initialParser <|
+                        sequence
+                            [ spaces AtLeastOne
+                            , oneOf
+                                [ initialParser
+                                , leftParenthesis
+                                ]
+                            ]
+
+                AndJoiner ->
+                    startHelper level initialParser <|
+                        sequence
+                            [ spaces AtLeastOne
+                            , oneOf
+                                [ initialParser
+                                , leftParenthesis
+                                ]
+                            ]
+
+                StringValue ->
+                    if level > 0 then
+                        startHelper level initialParser <|
+                            oneOf
+                                [ sequence
+                                    [ spaces AtLeastOne
+                                    , oneOf [ conjunction, rightParenthesis ]
+                                    ]
+                                , sequence
+                                    [ spaces ZeroOrMore
+                                    , rightParenthesis
+                                    ]
+                                ]
+                    else
+                        oneOf
+                            [ sequence
+                                [ spaces AtLeastOne
+                                , startHelper level initialParser conjunction
+                                ]
+                            , spaces ZeroOrMore
+                            ]
+
+                _ ->
+                    getNextParser level rest initialParser
+
+
+startHelper : Int -> Parser -> Parser -> Parser
+startHelper level initialParser parser =
+    Parser <|
+        \initialState ->
+            case apply initialState parser of
+                Ok ((State { tokens }) as nextState) ->
+                    apply nextState <|
+                        getNextParser level tokens initialParser
+
+                (Err x) as error ->
+                    error
+
+
+start : Parser
+start =
     let
-        expression1 =
+        initialParser =
             expression
                 [ QueryField "name" "name" "string"
                 , QueryField "age" "age" "number"
                 , QueryField "status" "status" "enum"
                 ]
-
-        expression2 =
-            Parser <|
-                \initialState ->
-                    apply initialState <|
-                        sequence
-                            [ leftParenthesis
-                            , start False
-                            , rightParenthesis
-                            , maybeOne <|
-                                sequence
-                                    [ spaces AtLeastOne
-                                    , conjunction
-                                    , spaces AtLeastOne
-                                    , start True
-                                    ]
-                            ]
-
-        startHelper parser =
-            Parser <|
-                \initialState ->
-                    case apply initialState parser of
-                        Ok nextState ->
-                            apply nextState <|
-                                oneOf
-                                    [ sequence
-                                        [ spaces AtLeastOne
-                                        , conjunction
-                                        , spaces AtLeastOne
-                                        , start True
-                                        ]
-                                    , spaces ZeroOrMore
-                                    ]
-
-                        (Err x) as error ->
-                            error
     in
-    startHelper <|
+    startHelper 0 initialParser <|
         sequence
-            [ maybeOne <|
-                repeat <|
-                    oneOf
-                        [ word Word
-                        , spaces AtLeastOne
-                        ]
+            [ spaces ZeroOrMore
             , oneOf
-                [ expression1
-                , expression2
+                [ initialParser
+                , leftParenthesis
                 ]
             ]
 
@@ -529,7 +618,8 @@ run source =
                 }
 
         result =
-            apply initialState <| start True
+            apply initialState <|
+                sequence [ start, end ]
 
         _ =
             print result
