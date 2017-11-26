@@ -1,28 +1,30 @@
-module Grammar exposing (Expecting(..), ParseResult(..), run)
+module Grammar
+    exposing
+        ( OperatorType(..)
+        , ParseResult(..)
+        , TokenType(..)
+        , ValueType(..)
+        , run
+        )
 
 import Char
 import ParserUtils as P
     exposing
-        ( Parser(..)
+        ( Expecting(..)
+        , Parser(..)
         , Problem(..)
         , State(..)
         , Token(..)
         , apply
         , end
-        , identity
         , maybeOne
         , oneOf
         , oneOrMore
         , repeat
         , sequence
         , squash
-        , word
         , zeroOrMore
         )
-
-
-type Expecting
-    = Expecting (List TokenType)
 
 
 type ParseResult
@@ -36,38 +38,49 @@ type Recurrence
     | ExactlyOnce
 
 
+type ValueType
+    = IntegerType
+    | StringType
+    | FloatType
+    | ListValue
+    | EitherValue
+    | NeitherValue
+
+
+type OperatorType
+    = IsType
+    | IsNotType
+    | IsInType
+    | IsNotInType
+    | IsEitherType
+    | IsNeitherType
+    | IsLessThanType
+    | IsLessThanOrEqualsType
+    | IsGreaterThan
+    | IsGreaterThanOrEqualsType
+    | EqualsType
+    | NotEqualsType
+    | ContainsType
+    | UnknownType
+
+
 type TokenType
     = Symbol
     | Word
-    | Keyword String
-    | Joiner String
-    | UnknownOperator
+    | OpenBracket
+    | CloseBracket
     | Comma
-    | IntegerValue
-    | FloatValue
-    | StringValue
     | Space
     | LeftParenthesis
     | RightParenthesis
     | Quote
     | AtSymbol
-    | IsOperator
-    | IsInOperator
-    | IsNotInOperator
-    | IsNotOperator
-    | ContainsOperator
-    | EqualsOperator
-    | NotEqualsOperator
-    | LessThanOperator
-    | GreaterThanOperator
-    | GreaterThanOrEqualsOperator
-    | LessThanOrEqualsOperator
-    | EitherOperator
-    | NeitherOperator
-    | OrOperator
-    | NorOperator
-    | OpenBracket
-    | CloseBracket
+    | Nor
+    | Or
+    | Keyword String
+    | Operator OperatorType
+    | Value ValueType
+    | Joiner String
 
 
 type alias State =
@@ -80,6 +93,10 @@ type alias Parser =
 
 type alias Problem =
     P.Problem TokenType
+
+
+type alias Expecting =
+    P.Expecting TokenType
 
 
 type alias QueryField =
@@ -96,7 +113,7 @@ symbol char context =
 
 anythingExceptSymbol : Char -> TokenType -> Parser
 anythingExceptSymbol char context =
-    P.symbol (\c -> Char.toLower c /= Char.toLower char) context
+    P.symbol (\c -> c /= char) context
 
 
 keyword : String -> TokenType -> Parser
@@ -111,6 +128,11 @@ keyword key context =
     squash context <|
         sequence <|
             List.map mapper chars
+
+
+at : Parser
+at =
+    symbol '@' AtSymbol
 
 
 comma : Parser
@@ -167,31 +189,47 @@ conjunction =
 
 isOperator : Parser
 isOperator =
-    keyword "is" IsOperator
+    let
+        context =
+            Operator IsType
+    in
+    oneOf
+        [ keyword "is" context
+        , keyword "=" context
+        ]
 
 
 containsOperator : Parser
 containsOperator =
-    keyword "contains" ContainsOperator
+    keyword "contains" (Operator ContainsType)
 
 
 isNotOperator : Parser
 isNotOperator =
-    squash IsNotOperator <|
+    let
+        context =
+            Operator IsNotType
+    in
+    squash context <|
         sequence
-            [ keyword "is" Word
+            [ keyword "is" context
             , spaces AtLeastOne
-            , keyword "not" Word
+            , keyword "not" context
             ]
+
+
+nonBreakingWord : TokenType -> Parser
+nonBreakingWord context =
+    squash context <| repeat <| anythingExceptSymbol ' ' context
 
 
 stringValue : Parser
 stringValue =
     oneOf
-        [ word StringValue
+        [ nonBreakingWord (Value StringType)
         , sequence
             [ doubleQuote
-            , squash StringValue <| repeat <| anythingExceptSymbol '"' Symbol
+            , squash (Value StringType) <| repeat <| anythingExceptSymbol '"' Symbol
             , doubleQuote
             ]
         ]
@@ -200,15 +238,18 @@ stringValue =
 int : Parser
 int =
     let
+        context =
+            Value IntegerType
+
         mapper =
-            \d -> symbol d Symbol
+            \d -> symbol d context
     in
-    squash IntegerValue <|
+    squash (Value IntegerType) <|
         sequence
             [ maybeOne <|
                 oneOf
-                    [ symbol '+' Symbol
-                    , symbol '-' Symbol
+                    [ symbol '+' context
+                    , symbol '-' context
                     ]
             , repeat <| oneOf <| List.map mapper (String.toList "1234567890")
             ]
@@ -217,21 +258,24 @@ int =
 float : Parser
 float =
     let
+        context =
+            Value FloatType
+
         mapper =
-            \d -> symbol d Symbol
+            \d -> symbol d context
     in
-    squash FloatValue <|
+    squash (Value FloatType) <|
         sequence
             [ maybeOne <|
                 oneOf
-                    [ symbol '+' Symbol
-                    , symbol '-' Symbol
+                    [ symbol '+' context
+                    , symbol '-' context
                     ]
             , oneOf
-                [ symbol '0' Symbol
+                [ symbol '0' context
                 , repeat <| oneOf <| List.map mapper <| String.toList "123456789"
                 ]
-            , symbol '.' Symbol
+            , symbol '.' context
             , repeat <| oneOf <| List.map mapper <| String.toList "1234567890"
             ]
 
@@ -244,127 +288,163 @@ numberValue =
         ]
 
 
-orOperator : Parser
-orOperator =
-    keyword "or" OrOperator
+or : Parser
+or =
+    keyword "or" Or
 
 
-norOperator : Parser
-norOperator =
-    keyword "nor" NorOperator
+nor : Parser
+nor =
+    keyword "nor" Nor
 
 
 equals : Parser
 equals =
-    keyword "equals" EqualsOperator
+    keyword "equals" (Operator EqualsType)
 
 
 notEquals : Parser
 notEquals =
-    squash NotEqualsOperator <|
+    let
+        context =
+            Operator NotEqualsType
+    in
+    squash context <|
         sequence
-            [ keyword "not" Word
+            [ keyword "not" context
             , spaces AtLeastOne
-            , keyword "equals" Word
+            , keyword "equals" context
             ]
 
 
 lessThan : Parser
 lessThan =
-    squash LessThanOperator <|
+    let
+        context =
+            Operator IsLessThanType
+    in
+    squash context <|
         sequence
-            [ keyword "less" Word
+            [ keyword "less" context
             , spaces AtLeastOne
-            , keyword "than" Word
+            , keyword "than" context
             ]
 
 
 greaterThan : Parser
 greaterThan =
-    squash GreaterThanOperator <|
+    let
+        context =
+            Operator IsGreaterThan
+    in
+    squash context <|
         sequence
-            [ keyword "greater" Word
+            [ keyword "greater" context
             , spaces AtLeastOne
-            , keyword "than" Word
+            , keyword "than" context
             ]
 
 
 greaterThanOrEquals : Parser
 greaterThanOrEquals =
-    squash GreaterThanOrEqualsOperator <|
+    let
+        context =
+            Operator IsGreaterThanOrEqualsType
+    in
+    squash context <|
         oneOf
-            [ keyword ">=" Word
+            [ keyword ">=" context
             , sequence
-                [ keyword "greater" Word
+                [ keyword "greater" context
                 , spaces AtLeastOne
-                , keyword "than" Word
+                , keyword "than" context
                 , spaces AtLeastOne
-                , keyword "or" Word
+                , keyword "or" context
                 , spaces AtLeastOne
-                , keyword "equals" Word
+                , keyword "equals" context
                 ]
             ]
 
 
 lessThanOrEquals : Parser
 lessThanOrEquals =
-    squash LessThanOrEqualsOperator <|
+    let
+        context =
+            Operator IsLessThanOrEqualsType
+    in
+    squash context <|
         sequence
-            [ keyword "less" Word
+            [ keyword "less" context
             , spaces AtLeastOne
-            , keyword "than" Word
+            , keyword "than" context
             , spaces AtLeastOne
-            , keyword "or" Word
+            , keyword "or" context
             , spaces AtLeastOne
-            , keyword "equals" Word
+            , keyword "equals" context
             ]
 
 
 isEitherOperator : Parser
 isEitherOperator =
-    squash EitherOperator <|
+    let
+        context =
+            Operator IsEitherType
+    in
+    squash context <|
         sequence
-            [ keyword "is" Word
+            [ keyword "is" context
             , spaces AtLeastOne
-            , keyword "either" Word
+            , keyword "either" context
             ]
 
 
 isNeitherOperator : Parser
 isNeitherOperator =
-    squash NeitherOperator <|
+    let
+        context =
+            Operator IsNeitherType
+    in
+    squash context <|
         sequence
-            [ keyword "is" Word
+            [ keyword "is" context
             , spaces AtLeastOne
-            , keyword "neither" Word
+            , keyword "neither" context
             ]
 
 
 isInOperator : Parser
 isInOperator =
-    squash IsInOperator <|
+    let
+        context =
+            Operator IsInType
+    in
+    squash context <|
         sequence
-            [ keyword "is" Word
+            [ keyword "is" context
             , spaces AtLeastOne
-            , keyword "in" Word
+            , keyword "in" context
+            ]
+
+
+isNotInOperator : Parser
+isNotInOperator =
+    let
+        context =
+            Operator IsNotInType
+    in
+    squash context <|
+        sequence
+            [ keyword "is" context
+            , spaces AtLeastOne
+            , keyword "not" context
+            , spaces AtLeastOne
+            , keyword "in" context
             ]
 
 
 unknownOperator : Parser
 unknownOperator =
-    repeat <| anythingExceptSymbol ' ' UnknownOperator
-
-
-isNotInOperator : Parser
-isNotInOperator =
-    squash IsNotInOperator <|
-        sequence
-            [ keyword "is" Word
-            , spaces AtLeastOne
-            , keyword "not" Word
-            , spaces AtLeastOne
-            , keyword "in" Word
-            ]
+    repeat <| anythingExceptSymbol ' ' (Operator UnknownType)
 
 
 list : Parser -> Parser
@@ -397,13 +477,52 @@ list parser =
                         (Err x) as error ->
                             error
     in
-    sequence
-        [ openBracket
-        , oneOf
-            [ listHelper parser
-            , closeBracket
+    squash (Value ListValue) <|
+        sequence
+            [ openBracket
+            , oneOf
+                [ listHelper parser
+                , closeBracket
+                ]
             ]
-        ]
+
+
+valueHelper : TokenType -> Parser -> Parser
+valueHelper state parser =
+    case state of
+        Operator operatorType ->
+            case operatorType of
+                IsEitherType ->
+                    squash (Value EitherValue) <|
+                        sequence
+                            [ parser
+                            , spaces AtLeastOne
+                            , or
+                            , spaces AtLeastOne
+                            , parser
+                            ]
+
+                IsNeitherType ->
+                    squash (Value NeitherValue) <|
+                        sequence
+                            [ parser
+                            , spaces AtLeastOne
+                            , nor
+                            , spaces AtLeastOne
+                            , parser
+                            ]
+
+                IsInType ->
+                    list parser
+
+                IsNotInType ->
+                    list parser
+
+                _ ->
+                    parser
+
+        _ ->
+            parser
 
 
 value : Parser -> Parser
@@ -415,33 +534,7 @@ value parser =
                     apply initialState <|
                         sequence
                             [ spaces AtLeastOne
-                            , case state of
-                                EitherOperator ->
-                                    sequence
-                                        [ parser
-                                        , spaces AtLeastOne
-                                        , orOperator
-                                        , spaces AtLeastOne
-                                        , parser
-                                        ]
-
-                                NeitherOperator ->
-                                    sequence
-                                        [ parser
-                                        , spaces AtLeastOne
-                                        , norOperator
-                                        , spaces AtLeastOne
-                                        , parser
-                                        ]
-
-                                IsInOperator ->
-                                    list parser
-
-                                IsNotInOperator ->
-                                    list parser
-
-                                _ ->
-                                    parser
+                            , valueHelper state parser
                             ]
 
                 Nothing ->
@@ -510,7 +603,7 @@ expression queryFields =
                     ]
     in
     sequence
-        [ symbol '@' AtSymbol
+        [ at
         , oneOf <| List.map mapper queryFields
         ]
 
@@ -533,13 +626,7 @@ getNextParser level items initialParser =
                     startHelper level initialParser <|
                         expressionGroup initialParser
 
-                StringValue ->
-                    afterValue level initialParser
-
-                IntegerValue ->
-                    afterValue level initialParser
-
-                FloatValue ->
+                Value _ ->
                     afterValue level initialParser
 
                 _ ->
@@ -625,10 +712,13 @@ start : Parser
 start =
     let
         initialParser =
-            expression
-                [ QueryField "name" "name" "string"
-                , QueryField "age" "age" "integer"
-                , QueryField "status" "status" "enum"
+            sequence
+                [ spaces ZeroOrMore
+                , expression
+                    [ QueryField "name" "name" "string"
+                    , QueryField "age" "age" "integer"
+                    , QueryField "status" "status" "enum"
+                    ]
                 ]
     in
     startHelper 0 initialParser <|
@@ -650,7 +740,7 @@ run source =
     in
     case result of
         Ok (State { tokens }) ->
-            ( Expecting [ Space ], ParsedSuccessfully tokens )
+            ( ExpectingSingle Space, ParsedSuccessfully <| List.reverse tokens )
 
         Err (Problem { expecting }) ->
-            ( Expecting expecting, ParseFailed )
+            ( expecting, ParseFailed )
